@@ -8,14 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
+    let pixels: [[Color]] = main().map { row in row.map { $0.toColor() } }
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        PixelCanvas(grid: pixels)
     }
 }
 
