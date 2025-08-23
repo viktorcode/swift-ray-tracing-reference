@@ -56,17 +56,12 @@ func getNoise(_ per: Perlin, _ p0: V3) -> Float {
     let k = Int(floor(p1.z))
 
     // Crazy Swift multi dimensional array syntax.
-    var c:[[[Float]]] = Array(repeating:
-                        Array(repeating:
-                        Array(repeating: 0.0,
-                            count: 2),
-                            count: 2),
-                            count: 2)
+    var c: InlineArray<8, Float> = .init(repeating: 0)
 
     for di in 0..<2 {
     for dj in 0..<2 {
     for dk in 0..<2 {
-        c[di][dj][dk] =
+        c[di * 4 + dj * 2 + dk] =
             per.randFloat[per.permX[(i+di) & (PERLIN_N - 1)] ^
                           per.permY[(j+dj) & (PERLIN_N - 1)] ^
                           per.permZ[(k+dk) & (PERLIN_N - 1)]]
@@ -81,7 +76,7 @@ func getNoise(_ per: Perlin, _ p0: V3) -> Float {
         let J = (Float(j)*v + (1.0 - Float(j))*(1.0 - v))
         let K = (Float(k)*w + (1.0 - Float(k))*(1.0 - w))
 
-        accum += I * J * K * Float(c[i][j][k])
+        accum += I * J * K * Float(c[i * 4 + j * 2 + k])
     }}}
 
     assert(accum <= 1.0)
