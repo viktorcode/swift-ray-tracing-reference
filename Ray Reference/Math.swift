@@ -6,12 +6,14 @@ func assertNaN(_ value: Float) {
     assert(!value.isNaN)
 }
 
+var generator = Wyrand()
+
 func filterNaN(_ value: Float) -> Float {
     return value.isNaN ? 0.0 : value
 }
 
 func drand48f() -> Float {
-    return Float(drand48())
+    return Float.random(in: 0...1, using: &generator)
 }
 
 func clamp01(_ a: Float) -> Float {
@@ -88,7 +90,7 @@ func /=(a: inout V3, b: Float) {
 }
 
 func *(a: Float, b: V3) -> V3 {
-    let res = V3(a*b.x, a*b.y, a*b.z)
+    let res = V3(a * b.x, a * b.y, a * b.z)
     return res
 }
 
@@ -103,7 +105,7 @@ prefix func -(a: V3) -> V3 {
 }
 
 func dot(_ a: V3, _ b: V3) -> Float {
-    let res = a.x*b.x + a.y*b.y + a.z*b.z
+    let res = a.x * b.x + a.y * b.y + a.z * b.z
     return res
 }
 

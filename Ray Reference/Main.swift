@@ -152,8 +152,7 @@ func reflect(_ v: V3, _ N: V3) -> V3 {
 
 // MARK: Sphere
 
-struct Sphere
-{
+struct Sphere {
     var center: V3
     var rad: Float
     var material: Material
@@ -192,8 +191,8 @@ struct Camera {
 
 struct HitRecord {
     var dist = Float(0)
-    var primRef:Sphere? = nil
-    var primType:PrimativeType = .sphere
+    var primRef: Sphere? = nil
+    var primType: PrimativeType = .sphere
 }
 
 struct Ray {
@@ -218,7 +217,7 @@ struct Ray {
 
 func getRayTemp(_ c: inout Camera, _ s: Float, _ t: Float) -> Ray {
 
-    let res = Ray(c.origin, c.lowerLeft + s*c.horiz + t*c.vert - c.origin)
+    let res = Ray(c.origin, c.lowerLeft + s * c.horiz + t * c.vert - c.origin)
     return res
 }
 
@@ -227,13 +226,13 @@ func getRay(_ c: inout Camera, _ s: Float, _ t: Float) -> Ray {
     // NOTE: (Kapsy) Random in unit disk.
     var rand = V3(0)
     repeat  {
-        rand = 2.0*V3(drand48f(), drand48f(), 0) - V3(1,1,0)
+        rand = 2.0 * V3(drand48f(), drand48f(), 0) - V3(1,1,0)
     } while dot(rand, rand) >= 1.0
 
-    let rd = c.lensRad*rand;
-    let offset = c.u*rd.x + c.v*rd.y
+    let rd = c.lensRad * rand;
+    let offset = c.u * rd.x + c.v * rd.y
 
-    let res = Ray(c.origin + offset, c.lowerLeft + s*c.horiz + t*c.vert - c.origin - offset)
+    let res = Ray(c.origin + offset, c.lowerLeft + s * c.horiz + t * c.vert - c.origin - offset)
     return res
 }
 
@@ -255,11 +254,12 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
 
         let a = dot(ray.dir, ray.dir)
         let b = dot(oc, ray.dir)
-        let c = dot(oc, oc) - rad*rad
-        let discriminant = b*b - a*c;
+        let c = dot(oc, oc) - rad * rad
+        let discriminant = b * b - a * c;
 
         if discriminant > 0.0 {
-            var t = (-b - sqrt(discriminant))/a
+            let discriminantRoot = sqrt(discriminant)
+            var t = (-b - discriminantRoot) / a
             if (tnear < t && t < tfar)
             {
                 tfar = t
@@ -269,7 +269,7 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
                 hit.primType = .sphere;
             }
 
-            t = (-b + sqrt(discriminant))/a
+            t = (-b + discriminantRoot) / a
             if (tnear < t && t < tfar)
             {
                 tfar = t
@@ -340,14 +340,14 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                 let reflected = v - 2*dot(v, N)*N
                 let bias = N*1e-4
 
-                var scattered = Ray(p + bias, reflected + _mat.fuzz*randomInUnitSphere())
+                var scattered = Ray(p + bias, reflected + _mat.fuzz * randomInUnitSphere())
 
                 let albedo = getAlbedo(_mat.texture, 0, 0, p)
 
                 // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                 let result = (dot(scattered.dir, N) > 0.0)
                 if (depth < MAX_DEPTH && result) {
-                    res = albedo*getColorForRay(&scattered, depth+1)
+                    res = albedo * getColorForRay(&scattered, depth+1)
                 } else {
                     res = V3(0.0)
                 }
@@ -499,7 +499,7 @@ func raytrace() -> [[V3]] {
     let frameCount = frameRate*durationSeconds
     
     // NOTE: (Kapsy) Camera rotation step
-    let omega = (2*Float.pi)/frameCount
+    let omega = (2 * Float.pi)/frameCount
     let k = V3 (0,1,0)
     var ellipsephase = Float(0)
     
@@ -517,6 +517,7 @@ func raytrace() -> [[V3]] {
     let lookAt = V3(0.0, 0.3, 0.0)
 
     var data: [[V3]] = []
+    data.reserveCapacity(nx * ny)
 
     for _ in 0..<3/*Int(frameCount)*/ {
         let startTime = CFAbsoluteTimeGetCurrent()
