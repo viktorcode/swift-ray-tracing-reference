@@ -55,7 +55,6 @@ func getNoise(_ per: Perlin, _ p0: V3) -> Float {
     let j = Int(floor(p1.y))
     let k = Int(floor(p1.z))
 
-    // Crazy Swift multi dimensional array syntax.
     var c: InlineArray<8, Float> = .init(repeating: 0)
 
     for di in 0..<2 {
@@ -100,14 +99,12 @@ struct Texture {
 // MARK: Material
 
 enum MaterialType {
-
     case lambertian
     case metal
     case dielectric
 }
 
-class Material {
-
+struct Material {
     var type: MaterialType
     var texture: Texture
     var fuzz = Float(0) // For metal only, leaving in same class for now.
@@ -155,7 +152,7 @@ func reflect(_ v: V3, _ N: V3) -> V3 {
 
 // MARK: Sphere
 
-class Sphere
+struct Sphere
 {
     var center: V3
     var rad: Float
@@ -443,7 +440,7 @@ func raytrace() -> [[V3]] {
     
     var whiteTexture = Texture()
     whiteTexture.albedo = V3(1,0.97,0.97)
-    let sphere2Mat = Material(type: .metal, texture: whiteTexture)
+    var sphere2Mat = Material(type: .metal, texture: whiteTexture)
     sphere2Mat.fuzz = 0.24
     let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
     globalSpheres.append(sphere2)
@@ -451,7 +448,7 @@ func raytrace() -> [[V3]] {
     var groundTexture = Texture()
     groundTexture.albedo = V3(0.2,0.5,0.3)
     groundTexture.type = .checker
-    let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
+    var sphere3Mat = Material(type: .lambertian, texture: groundTexture)
     sphere3Mat.refIndex = 1.3
     let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
     globalSpheres.append(sphere3)
@@ -470,7 +467,7 @@ func raytrace() -> [[V3]] {
     
     var purpleTexture = Texture()
     purpleTexture.albedo = V3(1,0,1)
-    let sphere6Mat = Material(type: .metal, texture: purpleTexture)
+    var sphere6Mat = Material(type: .metal, texture: purpleTexture)
     sphere6Mat.fuzz = 0.2
     let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
     globalSpheres.append(sphere6)
@@ -489,7 +486,7 @@ func raytrace() -> [[V3]] {
     
     var metalTexture = Texture()
     metalTexture.albedo = V3(0,1,1)
-    let sphere9Mat = Material(type: .metal, texture: metalTexture)
+    var sphere9Mat = Material(type: .metal, texture: metalTexture)
     sphere9Mat.fuzz = 0.3
     let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), rad: 0.10, material: sphere9Mat)
     globalSpheres.append(sphere9)
