@@ -17,7 +17,7 @@ struct Perlin {
     var permY: [Int]
     var permZ: [Int]
 
-    var randFloat: [Float]
+    let randFloat: [Float]
 
     init() {
         let N = PERLIN_N
@@ -26,10 +26,9 @@ struct Perlin {
         self.permY = [Int](repeating: 0, count: PERLIN_N)
         self.permZ = [Int](repeating: 0, count: PERLIN_N)
 
-        self.randFloat = [Float](repeating: 0.0, count: PERLIN_N)
+        self.randFloat = (0..<N).map { _ in drand48f() }
 
         for i in 0..<N {
-            self.randFloat[i] = drand48f()
             self.permX[i] = i
             self.permY[i] = i
             self.permZ[i] = i
@@ -43,46 +42,47 @@ struct Perlin {
     }
 }
 
-func getNoise(_ per: Perlin, _ p0: V3) -> Float {
+extension Perlin {
+    func getNoise(_ p0: V3) -> Float {
 
-    let p1 = p0 * 20.0
+        let p1 = p0 * 20.0
 
-    let u = Float(p1.x - floor(p1.x))
-    let v = Float(p1.y - floor(p1.y))
-    let w = Float(p1.z - floor(p1.z))
+        let u = Float(p1.x - floor(p1.x))
+        let v = Float(p1.y - floor(p1.y))
+        let w = Float(p1.z - floor(p1.z))
 
-    let i = Int(floor(p1.x))
-    let j = Int(floor(p1.y))
-    let k = Int(floor(p1.z))
+        let i = Int(floor(p1.x))
+        let j = Int(floor(p1.y))
+        let k = Int(floor(p1.z))
 
-    var c: InlineArray<8, Float> = .init(repeating: 0)
+        var c: InlineArray<8, Float> = .init(repeating: 0)
 
-    for di in 0..<2 {
-    for dj in 0..<2 {
-    for dk in 0..<2 {
-        c[di * 4 + dj * 2 + dk] =
-            per.randFloat[per.permX[(i+di) & (PERLIN_N - 1)] ^
-                          per.permY[(j+dj) & (PERLIN_N - 1)] ^
-                          per.permZ[(k+dk) & (PERLIN_N - 1)]]
-    }}}
+        for di in 0..<2 {
+            for dj in 0..<2 {
+                for dk in 0..<2 {
+                    c[di * 4 + dj * 2 + dk] =
+                    randFloat[permX[(i+di) & (PERLIN_N - 1)] ^
+                              permY[(j+dj) & (PERLIN_N - 1)] ^
+                              permZ[(k+dk) & (PERLIN_N - 1)]]
+                }}}
 
-    var accum = Float(0.0)
+        var accum = Float(0.0)
 
-    for i in 0..<2 {
-    for j in 0..<2 {
-    for k in 0..<2 {
-        let I = (Float(i)*u + (1.0 - Float(i))*(1.0 - u))
-        let J = (Float(j)*v + (1.0 - Float(j))*(1.0 - v))
-        let K = (Float(k)*w + (1.0 - Float(k))*(1.0 - w))
+        for i in 0..<2 {
+            for j in 0..<2 {
+                for k in 0..<2 {
+                    let I = (Float(i)*u + (1.0 - Float(i))*(1.0 - u))
+                    let J = (Float(j)*v + (1.0 - Float(j))*(1.0 - v))
+                    let K = (Float(k)*w + (1.0 - Float(k))*(1.0 - w))
 
-        accum += I * J * K * Float(c[i * 4 + j * 2 + k])
-    }}}
+                    accum += I * J * K * Float(c[i * 4 + j * 2 + k])
+                }}}
 
-    assert(accum <= 1.0)
+        assert(accum <= 1.0)
 
-    return accum
+        return accum
+    }
 }
-
 // MARK: Texture
 
 enum TextureType {
@@ -100,15 +100,13 @@ struct Texture {
 
 enum MaterialType {
     case lambertian
-    case metal
-    case dielectric
+    case metal(fuzz: Float)
+    case dielectric(refIndex: Float)
 }
 
 struct Material {
     var type: MaterialType
     var texture: Texture
-    var fuzz = Float(0) // For metal only, leaving in same class for now.
-    var refIndex = Float(1.1) // For dielectrics only, leaving here for now.
 
     init(type: MaterialType, texture: Texture) {
         self.type = type
@@ -116,10 +114,11 @@ struct Material {
     }
 }
 
-func getAlbedo(_ texture: Texture, _ u: Float, _ v: Float, _ p: V3) -> V3 {
-    var res = V3(0)
+extension Texture {
+    func getAlbedo(_ u: Float, _ v: Float, _ p: V3) -> V3 {
+        let res: V3
 
-    switch texture.type {
+        switch type {
         case .checker:
             let selector = Float(sin(10.0 * p.x) * sin(10.0 * p.z))
             if selector > 0.0 {
@@ -129,13 +128,14 @@ func getAlbedo(_ texture: Texture, _ u: Float, _ v: Float, _ p: V3) -> V3 {
             }
 
         case .plain:
-            res = texture.albedo
+            res = albedo
 
         case .perlin(let perlin):
-            res = V3(1.0) * getNoise(perlin, p)
-    }
+            res = V3(1.0) * perlin.getNoise(p)
+        }
 
-    return res
+        return res
+    }
 }
 
 func schlick(_ cos: Float, _ refIndex: Float) -> Float {
@@ -147,21 +147,15 @@ func schlick(_ cos: Float, _ refIndex: Float) -> Float {
 }
 
 func reflect(_ v: V3, _ N: V3) -> V3 {
-    return (v - 2 * dot(v, N) * N)
+    v - 2 * dot(v, N) * N
 }
 
 // MARK: Sphere
 
 struct Sphere {
-    var center: V3
-    var rad: Float
-    var material: Material
-
-    init(center: V3, rad: Float, material: Material) {
-        self.center = center
-        self.rad = rad
-        self.material = material
-    }
+    let center: V3
+    let rad: Float
+    let material: Material
 }
 
 var globalSpheres: [Sphere] = []
@@ -215,30 +209,30 @@ struct Ray {
     }
 }
 
-func getRayTemp(_ c: inout Camera, _ s: Float, _ t: Float) -> Ray {
+extension Camera {
+    func getRayTemp( _ s: Float, _ t: Float) -> Ray {
+        Ray(origin, lowerLeft + s * horiz + t * vert - origin)
+    }
 
-    let res = Ray(c.origin, c.lowerLeft + s * c.horiz + t * c.vert - c.origin)
-    return res
+    func getRay(_ s: Float, _ t: Float) -> Ray {
+        // NOTE: (Kapsy) Random in unit disk.
+        var rand = V3(0)
+        repeat  {
+            rand = 2.0 * V3(drand48f(), drand48f(), 0) - V3(1,1,0)
+        } while dot(rand, rand) >= 1.0
+
+        let rd = lensRad * rand;
+        let offset = u * rd.x + v * rd.y
+
+        let res = Ray(origin + offset, lowerLeft + s * horiz + t * vert - origin - offset)
+        return res
+    }
 }
 
-func getRay(_ c: inout Camera, _ s: Float, _ t: Float) -> Ray {
-
-    // NOTE: (Kapsy) Random in unit disk.
-    var rand = V3(0)
-    repeat  {
-        rand = 2.0 * V3(drand48f(), drand48f(), 0) - V3(1,1,0)
-    } while dot(rand, rand) >= 1.0
-
-    let rd = c.lensRad * rand;
-    let offset = c.u * rd.x + c.v * rd.y
-
-    let res = Ray(c.origin + offset, c.lowerLeft + s * c.horiz + t * c.vert - c.origin - offset)
-    return res
-}
-
-func pointAt(_ ray: inout Ray, _ t: Float) -> V3 {
-    let res = ray.A + t * ray.B
-    return res
+extension Ray {
+    func pointAt(_ t: Float) -> V3 {
+        A + t * B
+    }
 }
 
 func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
@@ -308,8 +302,8 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                 let rad = sphere.rad
                 let center = sphere.center
 
-                p = pointAt(&ray, hit.dist)
-                N = (p - center)/rad
+                p = ray.pointAt(hit.dist)
+                N = (p - center) / rad
                 mat = sphere.material
             }
 
@@ -317,15 +311,15 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
             break
         }
 
-        if let _mat = mat {
+        if let mat {
 
-            switch _mat.type {
+            switch mat.type {
 
             case .lambertian:
 
                 let rand = randomInUnitSphere()
                 let target = p + N + rand
-                let albedo = getAlbedo(_mat.texture, 0, 0, p)
+                let albedo = mat.texture.getAlbedo(0, 0, p)
                 var scattered = Ray(p, target - p)
 
                 if depth < MAX_DEPTH {
@@ -334,15 +328,15 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                     res = V3(0)
                 }
 
-            case .metal:
+            case .metal(let fuzz):
 
                 let v = unit(ray.dir)
                 let reflected = v - 2*dot(v, N)*N
                 let bias = N*1e-4
 
-                var scattered = Ray(p + bias, reflected + _mat.fuzz * randomInUnitSphere())
+                var scattered = Ray(p + bias, reflected + fuzz * randomInUnitSphere())
 
-                let albedo = getAlbedo(_mat.texture, 0, 0, p)
+                let albedo = mat.texture.getAlbedo(0, 0, p)
 
                 // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                 let result = (dot(scattered.dir, N) > 0.0)
@@ -352,7 +346,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                     res = V3(0.0)
                 }
 
-            case .dielectric:
+            case .dielectric(let refIndex):
 
                     var scattered = Ray()
 
@@ -365,14 +359,14 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
                     if dot(ray.dir, N) > 0.0 {
                         outwardNormal = -N
-                        niOverNt = _mat.refIndex
-                        cos = _mat.refIndex*dot(ray.dir, N)/length(ray.dir)
+                        niOverNt = refIndex
+                        cos = refIndex*dot(ray.dir, N)/length(ray.dir)
                     }
                     else
                     {
                         outwardNormal = N
-                        niOverNt = 1.0/_mat.refIndex
-                        cos = -dot(ray.dir, N)/length(ray.dir)
+                        niOverNt = 1.0 / refIndex
+                        cos = -dot(ray.dir, N) / length(ray.dir)
                     }
 
                     var refracted = V3(0.0)
@@ -386,8 +380,8 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
                     // NOTE: (Kapsy) Approximate reflection/refraction probability.
                     if discriminant > 0.0 {
-                        refracted = niOverNt*(uv - outwardNormal*dt) - outwardNormal*sqrt(discriminant)
-                        reflectProb = schlick(cos, _mat.refIndex)
+                        refracted = niOverNt*(uv - outwardNormal*dt) - outwardNormal * sqrt(discriminant)
+                        reflectProb = schlick(cos, refIndex)
                     } else {
                         scattered = Ray(p, reflected)
                         reflectProb = 1.0
@@ -434,22 +428,20 @@ func raytrace() -> [[V3]] {
     
     var glassTexture = Texture()
     glassTexture.albedo = V3(1)
-    let sphere1Mat = Material(type: .dielectric, texture: glassTexture)
+    let sphere1Mat = Material(type: .dielectric(refIndex: 1.1), texture: glassTexture)
     let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), rad: -0.23, material: sphere1Mat)
     globalSpheres.append(sphere1)
     
     var whiteTexture = Texture()
     whiteTexture.albedo = V3(1,0.97,0.97)
-    var sphere2Mat = Material(type: .metal, texture: whiteTexture)
-    sphere2Mat.fuzz = 0.24
+    let sphere2Mat = Material(type: .metal(fuzz: 0.24), texture: whiteTexture)
     let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
     globalSpheres.append(sphere2)
     
     var groundTexture = Texture()
     groundTexture.albedo = V3(0.2,0.5,0.3)
     groundTexture.type = .checker
-    var sphere3Mat = Material(type: .lambertian, texture: groundTexture)
-    sphere3Mat.refIndex = 1.3
+    let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
     let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
     globalSpheres.append(sphere3)
     
@@ -467,8 +459,7 @@ func raytrace() -> [[V3]] {
     
     var purpleTexture = Texture()
     purpleTexture.albedo = V3(1,0,1)
-    var sphere6Mat = Material(type: .metal, texture: purpleTexture)
-    sphere6Mat.fuzz = 0.2
+    let sphere6Mat = Material(type: .metal(fuzz: 0.2), texture: purpleTexture)
     let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
     globalSpheres.append(sphere6)
     
@@ -480,14 +471,13 @@ func raytrace() -> [[V3]] {
     
     var purple2Texture = Texture()
     purple2Texture.albedo = V3(1,1,1)
-    let sphere8Mat = Material(type: .dielectric, texture: purple2Texture)
+    let sphere8Mat = Material(type: .dielectric(refIndex: 1.1), texture: purple2Texture)
     let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), rad: 0.18, material: sphere8Mat)
     globalSpheres.append(sphere8)
     
     var metalTexture = Texture()
     metalTexture.albedo = V3(0,1,1)
-    var sphere9Mat = Material(type: .metal, texture: metalTexture)
-    sphere9Mat.fuzz = 0.3
+    let sphere9Mat = Material(type: .metal(fuzz: 0.3), texture: metalTexture)
     let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), rad: 0.10, material: sphere9Mat)
     globalSpheres.append(sphere9)
     
@@ -555,6 +545,7 @@ func raytrace() -> [[V3]] {
         for j in (0..<ny).reversed() {
 
             var row: [V3] = []
+            row.reserveCapacity(nx)
             for i in 0..<nx {
 
                 var col = V3(0)
@@ -564,7 +555,7 @@ func raytrace() -> [[V3]] {
                     let u = (Float(i) + drand48f())/Float(nx)
                     let v = (Float(j) + drand48f())/Float(ny)
 
-                    var r = getRay(&cam, u, v)
+                    var r = cam.getRay(u, v)
 
                     col += getColorForRay(&r, 0)
                 }
