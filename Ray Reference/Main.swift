@@ -205,7 +205,7 @@ struct Camera {
 
 // MARK: Ray
 
-class HitRecord {
+struct HitRecord {
     var dist = Float(0)
     var primRef:Sphere? = nil
     var primType:PrimativeType = .sphere
@@ -257,7 +257,7 @@ func pointAt(_ ray: inout Ray, _ t: Float) -> V3 {
     return res
 }
 
-func traverseSpheres(_ ray: inout Ray, _ hit: HitRecord) {
+func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
 
     let tnear = Float(0.001)
     var tfar = Float.greatestFiniteMagnitude
@@ -303,10 +303,10 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
     var res = V3()
 
-    let hit = HitRecord()
+    var hit = HitRecord()
     hit.dist = Float.greatestFiniteMagnitude
 
-    traverseSpheres(&ray, hit)
+    traverseSpheres(&ray, &hit)
 
     if hit.dist < Float.greatestFiniteMagnitude {
 
