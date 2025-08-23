@@ -440,7 +440,6 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 struct RGB {  }
 
 func raytrace() -> [[V3]] {
-    let startTime = CFAbsoluteTimeGetCurrent()
     // MARK: Init spheres
     
     let perlinTexture = Texture()
@@ -534,79 +533,82 @@ func raytrace() -> [[V3]] {
     
     var lookFrom = V3(0.001,0.39,-1.0)
     let lookAt = V3(0.0, 0.3, 0.0)
-    
-    //   for f in 0..<Int(frameCount) {
-    
+
     var data: [[V3]] = []
-        
-    // NOTE: (Kapsy) Camera setup stuff.
-    
-    var cam = Camera()
-    
-    var lookFromRes = lookFrom
-    lookFromRes = lookFromRes*((-cos(ellipsephase) + 1.0)*0.07 + 1.3);
-    
-    let vup = V3(0.18, 1, 0)
-    let vfov = Float(60)
-    let aspect = Float(nx)/Float(ny)
-    let aperture = Float(0.09)
-    let focusDist = length(lookFromRes - lookAt)
-    
-    cam.lensRad = aperture/2.0;
-    
-    let theta = vfov*Float.pi/180
-    let halfHeight = tan(theta/2)
-    let halfWidth = Float(aspect*halfHeight)
-    
-    cam.origin = lookFromRes
-    cam.w = unit(lookFromRes - lookAt)
-    cam.u = unit(cross(vup, cam.w))
-    cam.v = cross(cam.w, cam.u)
-    
-    cam.lowerLeft = cam.origin - halfWidth*focusDist*cam.u - halfHeight*focusDist*cam.v - focusDist*cam.w
-    cam.horiz = 2*halfWidth*focusDist*cam.u
-    cam.vert = 2*halfHeight*focusDist*cam.v
-    
-    for j in (0..<ny).reversed() {
-        
-        var row: [V3] = []
-        for i in 0..<nx {
-            
-            var col = V3(0)
-            
-            for _ in 0..<ns {
-                
-                let u = (Float(i) + drand48f())/Float(nx)
-                let v = (Float(j) + drand48f())/Float(ny)
-                
-                var r = getRay(&cam, u, v)
-                
-                col += getColorForRay(&r, 0)
+
+    for _ in 0..<3/*Int(frameCount)*/ {
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        data = []
+
+        // NOTE: (Kapsy) Camera setup stuff.
+
+        var cam = Camera()
+
+        var lookFromRes = lookFrom
+        lookFromRes = lookFromRes*((-cos(ellipsephase) + 1.0)*0.07 + 1.3);
+
+        let vup = V3(0.18, 1, 0)
+        let vfov = Float(60)
+        let aspect = Float(nx)/Float(ny)
+        let aperture = Float(0.09)
+        let focusDist = length(lookFromRes - lookAt)
+
+        cam.lensRad = aperture/2.0;
+
+        let theta = vfov*Float.pi/180
+        let halfHeight = tan(theta/2)
+        let halfWidth = Float(aspect*halfHeight)
+
+        cam.origin = lookFromRes
+        cam.w = unit(lookFromRes - lookAt)
+        cam.u = unit(cross(vup, cam.w))
+        cam.v = cross(cam.w, cam.u)
+
+        cam.lowerLeft = cam.origin - halfWidth*focusDist*cam.u - halfHeight*focusDist*cam.v - focusDist*cam.w
+        cam.horiz = 2*halfWidth*focusDist*cam.u
+        cam.vert = 2*halfHeight*focusDist*cam.v
+
+        for j in (0..<ny).reversed() {
+
+            var row: [V3] = []
+            for i in 0..<nx {
+
+                var col = V3(0)
+
+                for _ in 0..<ns {
+
+                    let u = (Float(i) + drand48f())/Float(nx)
+                    let v = (Float(j) + drand48f())/Float(ny)
+
+                    var r = getRay(&cam, u, v)
+
+                    col += getColorForRay(&r, 0)
+                }
+
+                // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
+                col.r = filterNaN(col.r)
+                col.g = filterNaN(col.g)
+                col.b = filterNaN(col.b)
+
+                col /= Float(ns)
+
+                col.r = clamp01(col.r)
+                col.g = clamp01(col.g)
+                col.b = clamp01(col.b)
+                row.append(col)
             }
-            
-            // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
-            col.r = filterNaN(col.r)
-            col.g = filterNaN(col.g)
-            col.b = filterNaN(col.b)
-            
-            col /= Float(ns)
-            
-            col.r = clamp01(col.r)
-            col.g = clamp01(col.g)
-            col.b = clamp01(col.b)
-            row.append(col)
+            data.append(row)
         }
-        data.append(row)
+        let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
+        print("Time spent raytracing: \(raytracingTime)s")
+
+        // NOTE: (Kapsy) Rodrigues Rotation formula
+        var v = lookFrom
+        v = v*cos(omega) + cross(k, v)*sin(omega) + k*dot(k, v)*(1.0 - cos(omega))
+        lookFrom = v
+
+        ellipsephase += omega
     }
-    let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
-    print("Time spent raytracing: \(raytracingTime)s")
     return data
-    
-    // NOTE: (Kapsy) Rodrigues Rotation formula
-    var v = lookFrom
-    v = v*cos(omega) + cross(k, v)*sin(omega) + k*dot(k, v)*(1.0 - cos(omega))
-    lookFrom = v
-    
-    ellipsephase += omega
-    // }
 }
