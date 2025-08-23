@@ -13,6 +13,7 @@ struct PixelCanvas: View {
     
     var body: some View {
         Canvas { context, size in
+            let startTime = CFAbsoluteTimeGetCurrent()
             for (y, row) in grid.enumerated() {
                 for (x, color) in row.enumerated() {
                     let rect = CGRect(
@@ -24,6 +25,8 @@ struct PixelCanvas: View {
                     context.fill(Path(rect), with: .color(color))
                 }
             }
+            let renderingTime = CFAbsoluteTimeGetCurrent() - startTime
+            print("Time spent rendering: \(renderingTime)s")
         }
         .frame(
             width: pixelSize * CGFloat(grid[0].count),

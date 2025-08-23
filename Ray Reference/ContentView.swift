@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    let pixels: [[Color]] = main().map { row in row.map { $0.toColor() } }
+    let pixels: [[Color]] = raytrace().map { row in row.map { $0.toColor() } }
 
     var body: some View {
         PixelCanvas(grid: pixels)

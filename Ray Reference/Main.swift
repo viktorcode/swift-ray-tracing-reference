@@ -439,8 +439,8 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
 struct RGB {  }
 
-func main() -> [[V3]] {
-    
+func raytrace() -> [[V3]] {
+    let startTime = CFAbsoluteTimeGetCurrent()
     // MARK: Init spheres
     
     let perlinTexture = Texture()
@@ -598,6 +598,8 @@ func main() -> [[V3]] {
         }
         data.append(row)
     }
+    let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
+    print("Time spent raytracing: \(raytracingTime)s")
     return data
     
     // NOTE: (Kapsy) Rodrigues Rotation formula
