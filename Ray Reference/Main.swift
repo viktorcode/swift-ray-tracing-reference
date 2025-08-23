@@ -2,17 +2,17 @@ import Foundation
 
 // MARK: Perlin Noise
 
-var PERLIN_N:Int = (1 << 8)
+var PERLIN_N: Int = (1 << 8)
 
 func permuteAxis(_ axis: inout [Int], _ i: Int) {
-    let tar = Int(drand48f()*Float(i + 1))
+    let tar = Int(drand48f() * Float(i + 1))
     let tmp = axis[i]
     axis[i] = axis[tar]
     axis[tar] = tmp
 }
 
 // NOTE: (Kapsy) This is an incomplete implementation!
-class Perlin {
+struct Perlin {
     var permX: [Int]
     var permY: [Int]
     var permZ: [Int]
@@ -45,7 +45,7 @@ class Perlin {
 
 func getNoise(_ per: Perlin, _ p0: V3) -> Float {
 
-    let p1 = p0*20.0
+    let p1 = p0 * 20.0
 
     let u = Float(p1.x - floor(p1.x))
     let v = Float(p1.y - floor(p1.y))
@@ -81,7 +81,7 @@ func getNoise(_ per: Perlin, _ p0: V3) -> Float {
         let J = (Float(j)*v + (1.0 - Float(j))*(1.0 - v))
         let K = (Float(k)*w + (1.0 - Float(k))*(1.0 - w))
 
-        accum += I*J*K*Float(c[i][j][k])
+        accum += I * J * K * Float(c[i][j][k])
     }}}
 
     assert(accum <= 1.0)
@@ -92,17 +92,14 @@ func getNoise(_ per: Perlin, _ p0: V3) -> Float {
 // MARK: Texture
 
 enum TextureType {
-
     case plain
     case checker
-    case perlin
+    case perlin(Perlin)
 }
 
-class Texture {
-
+struct Texture {
     var type: TextureType = .plain
     var albedo = V3(0)
-    var perlin: Perlin?
 }
 
 // MARK: Material
@@ -128,13 +125,11 @@ class Material {
 }
 
 func getAlbedo(_ texture: Texture, _ u: Float, _ v: Float, _ p: V3) -> V3 {
-
     var res = V3(0)
 
     switch texture.type {
-
         case .checker:
-            let selector = Float(sin(10.0*p.x)*sin(10.0*p.z))
+            let selector = Float(sin(10.0 * p.x) * sin(10.0 * p.z))
             if selector > 0.0 {
                 res = V3(0,0,0)
             } else {
@@ -144,25 +139,23 @@ func getAlbedo(_ texture: Texture, _ u: Float, _ v: Float, _ p: V3) -> V3 {
         case .plain:
             res = texture.albedo
 
-        case .perlin:
-            if let perlin = texture.perlin {
-                res = V3(1.0)*getNoise(perlin, p)
-            }
+        case .perlin(let perlin):
+            res = V3(1.0) * getNoise(perlin, p)
     }
 
     return res
 }
 
 func schlick(_ cos: Float, _ refIndex: Float) -> Float {
-    var r0 = (1.0 - refIndex)/(1.0 + refIndex);
-    r0 = r0*r0;
-    r0 = r0 + (1.0 - r0)*pow((1.0 - cos), 5.0);
+    var r0 = (1.0 - refIndex) / (1.0 + refIndex);
+    r0 = r0 * r0;
+    r0 = r0 + (1.0 - r0) * pow((1.0 - cos), 5.0);
 
     return r0
 }
 
 func reflect(_ v: V3, _ N: V3) -> V3 {
-    return (v - 2*dot(v, N)*N)
+    return (v - 2 * dot(v, N) * N)
 }
 
 // MARK: Sphere
@@ -253,7 +246,7 @@ func getRay(_ c: inout Camera, _ s: Float, _ t: Float) -> Ray {
 }
 
 func pointAt(_ ray: inout Ray, _ t: Float) -> V3 {
-    let res = ray.A + t*ray.B
+    let res = ray.A + t * ray.B
     return res
 }
 
@@ -429,7 +422,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
         let t = (unit(rdir).y + 1.0)*0.5
         let cola = V3(1.0)
-        let colb = (1.0/255.0)*V3(255.0, 128.0, 0.0)
+        let colb = (1.0/255.0) * V3(255.0, 128.0, 0.0)
 
         res = (1.0 - t)*cola + t*colb
     }
@@ -437,33 +430,30 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
     return res
 }
 
-struct RGB {  }
-
 func raytrace() -> [[V3]] {
     // MARK: Init spheres
     
-    let perlinTexture = Texture()
+    var perlinTexture = Texture()
     perlinTexture.albedo = V3(1,1,1)
-    perlinTexture.perlin = Perlin()
-    perlinTexture.type = .perlin
+    perlinTexture.type = .perlin(Perlin())
     let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
     let sphere0 = Sphere(center: V3(0, 0.32, 0), rad: 0.34, material: sphere0Mat)
     globalSpheres.append(sphere0)
     
-    let glassTexture = Texture()
+    var glassTexture = Texture()
     glassTexture.albedo = V3(1)
     let sphere1Mat = Material(type: .dielectric, texture: glassTexture)
     let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), rad: -0.23, material: sphere1Mat)
     globalSpheres.append(sphere1)
     
-    let whiteTexture = Texture()
+    var whiteTexture = Texture()
     whiteTexture.albedo = V3(1,0.97,0.97)
     let sphere2Mat = Material(type: .metal, texture: whiteTexture)
     sphere2Mat.fuzz = 0.24
     let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
     globalSpheres.append(sphere2)
     
-    let groundTexture = Texture()
+    var groundTexture = Texture()
     groundTexture.albedo = V3(0.2,0.5,0.3)
     groundTexture.type = .checker
     let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
@@ -471,38 +461,38 @@ func raytrace() -> [[V3]] {
     let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
     globalSpheres.append(sphere3)
     
-    let greenTexture = Texture()
+    var greenTexture = Texture()
     greenTexture.albedo = V3(0,1.3,0)
     let sphere4Mat = Material(type: .lambertian, texture: greenTexture)
     let sphere4 = Sphere(center: V3(0.0, 0.3, 0.5), rad: 0.13, material: sphere4Mat)
     globalSpheres.append(sphere4)
     
-    let redTexture = Texture()
+    var redTexture = Texture()
     redTexture.albedo = V3(2,0.3,0.3)
     let sphere5Mat = Material(type: .lambertian, texture: redTexture)
     let sphere5 = Sphere(center: V3(0.1, 0.3, -0.6), rad: 0.16, material: sphere5Mat)
     globalSpheres.append(sphere5)
     
-    let purpleTexture = Texture()
+    var purpleTexture = Texture()
     purpleTexture.albedo = V3(1,0,1)
     let sphere6Mat = Material(type: .metal, texture: purpleTexture)
     sphere6Mat.fuzz = 0.2
     let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
     globalSpheres.append(sphere6)
     
-    let blueTexture = Texture()
+    var blueTexture = Texture()
     blueTexture.albedo = V3(0.2,0.2,3)
     let sphere7Mat = Material(type: .lambertian, texture: blueTexture)
     let sphere7 = Sphere(center: V3(-0.5, 0.3, -0.9), rad: 0.13, material: sphere7Mat)
     globalSpheres.append(sphere7)
     
-    let purple2Texture = Texture()
+    var purple2Texture = Texture()
     purple2Texture.albedo = V3(1,1,1)
     let sphere8Mat = Material(type: .dielectric, texture: purple2Texture)
     let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), rad: 0.18, material: sphere8Mat)
     globalSpheres.append(sphere8)
     
-    let metalTexture = Texture()
+    var metalTexture = Texture()
     metalTexture.albedo = V3(0,1,1)
     let sphere9Mat = Material(type: .metal, texture: metalTexture)
     sphere9Mat.fuzz = 0.3
