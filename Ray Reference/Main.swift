@@ -570,9 +570,9 @@ func raytrace() -> [[V3]] {
                 }
 
                 // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
-                col.r = filterNaN(col.r)
-                col.g = filterNaN(col.g)
-                col.b = filterNaN(col.b)
+//                col.r = filterNaN(col.r)
+//                col.g = filterNaN(col.g)
+//                col.b = filterNaN(col.b)
 
                 col /= Float(ns)
 

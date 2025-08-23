@@ -13,7 +13,7 @@ func filterNaN(_ value: Float) -> Float {
 }
 
 func drand48f() -> Float {
-    return Float.random(in: 0...1, using: &generator)
+    return Float.random(in: 0..<1, using: &generator)
 }
 
 func clamp01(_ a: Float) -> Float {
