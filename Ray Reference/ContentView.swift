@@ -6,13 +6,6 @@
 //
 
 import SwiftUI
-import CoreGraphics
-
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
 struct ContentView: View {
     let nx: Int = 600
@@ -22,7 +15,7 @@ struct ContentView: View {
     let omega: Float = (2 * Float.pi) / 300
 
     @State var data: [[V3]] = []
-    @State var pixels: [[Color]] = []
+    @State var pixels: [[V3]] = []
 
     @State var lookFrom: V3 = .init(0.001, 0.39, -1.0)
     @State var ellipsePhase: Float = 0
@@ -35,15 +28,11 @@ struct ContentView: View {
             setup()
             while !Task.isCancelled {
                 raytraceFrame()
-                pixels = data.map { row in row.map { $0.toColor() } }
+                pixels = data
                 try? await Task.sleep(for: .milliseconds(10))
             }
         }
     }
-}
-
-extension V3 {
-    func toColor() -> Color { Color(cgColor: .init(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1)) }
 }
 
 #Preview {
