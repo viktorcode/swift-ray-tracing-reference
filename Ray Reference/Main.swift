@@ -416,110 +416,89 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
     return res
 }
 
-func raytrace() -> [[V3]] {
-    // MARK: Init spheres
-    
-    var perlinTexture = Texture()
-    perlinTexture.albedo = V3(1,1,1)
-    perlinTexture.type = .perlin(Perlin())
-    let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
-    let sphere0 = Sphere(center: V3(0, 0.32, 0), rad: 0.34, material: sphere0Mat)
-    globalSpheres.append(sphere0)
-    
-    var glassTexture = Texture()
-    glassTexture.albedo = V3(1)
-    let sphere1Mat = Material(type: .dielectric(refIndex: 1.1), texture: glassTexture)
-    let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), rad: -0.23, material: sphere1Mat)
-    globalSpheres.append(sphere1)
-    
-    var whiteTexture = Texture()
-    whiteTexture.albedo = V3(1,0.97,0.97)
-    let sphere2Mat = Material(type: .metal(fuzz: 0.24), texture: whiteTexture)
-    let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
-    globalSpheres.append(sphere2)
-    
-    var groundTexture = Texture()
-    groundTexture.albedo = V3(0.2,0.5,0.3)
-    groundTexture.type = .checker
-    let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
-    let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
-    globalSpheres.append(sphere3)
-    
-    var greenTexture = Texture()
-    greenTexture.albedo = V3(0,1.3,0)
-    let sphere4Mat = Material(type: .lambertian, texture: greenTexture)
-    let sphere4 = Sphere(center: V3(0.0, 0.3, 0.5), rad: 0.13, material: sphere4Mat)
-    globalSpheres.append(sphere4)
-    
-    var redTexture = Texture()
-    redTexture.albedo = V3(2,0.3,0.3)
-    let sphere5Mat = Material(type: .lambertian, texture: redTexture)
-    let sphere5 = Sphere(center: V3(0.1, 0.3, -0.6), rad: 0.16, material: sphere5Mat)
-    globalSpheres.append(sphere5)
-    
-    var purpleTexture = Texture()
-    purpleTexture.albedo = V3(1,0,1)
-    let sphere6Mat = Material(type: .metal(fuzz: 0.2), texture: purpleTexture)
-    let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
-    globalSpheres.append(sphere6)
-    
-    var blueTexture = Texture()
-    blueTexture.albedo = V3(0.2,0.2,3)
-    let sphere7Mat = Material(type: .lambertian, texture: blueTexture)
-    let sphere7 = Sphere(center: V3(-0.5, 0.3, -0.9), rad: 0.13, material: sphere7Mat)
-    globalSpheres.append(sphere7)
-    
-    var purple2Texture = Texture()
-    purple2Texture.albedo = V3(1,1,1)
-    let sphere8Mat = Material(type: .dielectric(refIndex: 1.1), texture: purple2Texture)
-    let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), rad: 0.18, material: sphere8Mat)
-    globalSpheres.append(sphere8)
-    
-    var metalTexture = Texture()
-    metalTexture.albedo = V3(0,1,1)
-    let sphere9Mat = Material(type: .metal(fuzz: 0.3), texture: metalTexture)
-    let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), rad: 0.10, material: sphere9Mat)
-    globalSpheres.append(sphere9)
-    
-    let frameRate = Float(25)
-    // NOTE: (Kapsy) Uncomment for animation preview renders.
-    //let frameRate = Float(0.5)
-    
-    let durationSeconds = Float(12)
-    let frameCount = frameRate*durationSeconds
-    
-    // NOTE: (Kapsy) Camera rotation step
-    let omega = (2 * Float.pi)/frameCount
-    let k = V3 (0,1,0)
-    var ellipsephase = Float(0)
-    
-    // NOTE: (Kapsy) Image plane dimensions
-    let nx = Int(600)
-    let ny = Int(300)
-    
-    //// let nx = Int(200)
-    //// let ny = Int(100)
-    
-    // NOTE: (Kapsy) Primary rays per pixel
-    let ns = Int(30)
-    
-    var lookFrom = V3(0.001,0.39,-1.0)
-    let lookAt = V3(0.0, 0.3, 0.0)
+extension ContentView {
+    func setup() {
+        // MARK: Init spheres
 
-    var data: [[V3]] = []
-    data.reserveCapacity(nx * ny)
+        var perlinTexture = Texture()
+        perlinTexture.albedo = V3(1,1,1)
+        perlinTexture.type = .perlin(Perlin())
+        let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
+        let sphere0 = Sphere(center: V3(0, 0.32, 0), rad: 0.34, material: sphere0Mat)
+        globalSpheres.append(sphere0)
 
-    for _ in 0..<3/*Int(frameCount)*/ {
+        var glassTexture = Texture()
+        glassTexture.albedo = V3(1)
+        let sphere1Mat = Material(type: .dielectric(refIndex: 1.1), texture: glassTexture)
+        let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), rad: -0.23, material: sphere1Mat)
+        globalSpheres.append(sphere1)
+
+        var whiteTexture = Texture()
+        whiteTexture.albedo = V3(1,0.97,0.97)
+        let sphere2Mat = Material(type: .metal(fuzz: 0.24), texture: whiteTexture)
+        let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
+        globalSpheres.append(sphere2)
+
+        var groundTexture = Texture()
+        groundTexture.albedo = V3(0.2,0.5,0.3)
+        groundTexture.type = .checker
+        let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
+        let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
+        globalSpheres.append(sphere3)
+
+        var greenTexture = Texture()
+        greenTexture.albedo = V3(0,1.3,0)
+        let sphere4Mat = Material(type: .lambertian, texture: greenTexture)
+        let sphere4 = Sphere(center: V3(0.0, 0.3, 0.5), rad: 0.13, material: sphere4Mat)
+        globalSpheres.append(sphere4)
+
+        var redTexture = Texture()
+        redTexture.albedo = V3(2,0.3,0.3)
+        let sphere5Mat = Material(type: .lambertian, texture: redTexture)
+        let sphere5 = Sphere(center: V3(0.1, 0.3, -0.6), rad: 0.16, material: sphere5Mat)
+        globalSpheres.append(sphere5)
+
+        var purpleTexture = Texture()
+        purpleTexture.albedo = V3(1,0,1)
+        let sphere6Mat = Material(type: .metal(fuzz: 0.2), texture: purpleTexture)
+        let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
+        globalSpheres.append(sphere6)
+
+        var blueTexture = Texture()
+        blueTexture.albedo = V3(0.2,0.2,3)
+        let sphere7Mat = Material(type: .lambertian, texture: blueTexture)
+        let sphere7 = Sphere(center: V3(-0.5, 0.3, -0.9), rad: 0.13, material: sphere7Mat)
+        globalSpheres.append(sphere7)
+
+        var purple2Texture = Texture()
+        purple2Texture.albedo = V3(1,1,1)
+        let sphere8Mat = Material(type: .dielectric(refIndex: 1.1), texture: purple2Texture)
+        let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), rad: 0.18, material: sphere8Mat)
+        globalSpheres.append(sphere8)
+
+        var metalTexture = Texture()
+        metalTexture.albedo = V3(0,1,1)
+        let sphere9Mat = Material(type: .metal(fuzz: 0.3), texture: metalTexture)
+        let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), rad: 0.10, material: sphere9Mat)
+        globalSpheres.append(sphere9)
+        data.reserveCapacity(nx * ny)
+    }
+
+    func raytraceFrame() {
+        // NOTE: (Kapsy) Primary rays per pixel
+        let ns = Int(30)
+
+        //        for _ in 0..<Int(frameCount) {
         let startTime = CFAbsoluteTimeGetCurrent()
 
-        data = []
+        data.removeAll(keepingCapacity: true)
 
         // NOTE: (Kapsy) Camera setup stuff.
 
         var cam = Camera()
 
         var lookFromRes = lookFrom
-        lookFromRes = lookFromRes*((-cos(ellipsephase) + 1.0)*0.07 + 1.3);
+        lookFromRes = lookFromRes*((-cos(ellipsePhase) + 1.0) * 0.07 + 1.3);
 
         let vup = V3(0.18, 1, 0)
         let vfov = Float(60)
@@ -561,9 +540,9 @@ func raytrace() -> [[V3]] {
                 }
 
                 // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
-//                col.r = filterNaN(col.r)
-//                col.g = filterNaN(col.g)
-//                col.b = filterNaN(col.b)
+                //                col.r = filterNaN(col.r)
+                //                col.g = filterNaN(col.g)
+                //                col.b = filterNaN(col.b)
 
                 col /= Float(ns)
 
@@ -582,7 +561,7 @@ func raytrace() -> [[V3]] {
         v = v*cos(omega) + cross(k, v)*sin(omega) + k*dot(k, v)*(1.0 - cos(omega))
         lookFrom = v
 
-        ellipsephase += omega
+        ellipsePhase += omega
+        //        }
     }
-    return data
 }
