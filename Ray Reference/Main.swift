@@ -105,8 +105,8 @@ enum MaterialType {
 }
 
 struct Material {
-    var type: MaterialType
-    var texture: Texture
+    let type: MaterialType
+    let texture: Texture
 
     init(type: MaterialType, texture: Texture) {
         self.type = type
@@ -154,7 +154,7 @@ func reflect(_ v: V3, _ N: V3) -> V3 {
 
 struct Sphere {
     let center: V3
-    let rad: Float
+    let radius: Float
     let material: Material
 }
 
@@ -184,7 +184,7 @@ struct Camera {
 // MARK: Ray
 
 struct HitRecord {
-    var dist = Float(0)
+    var distance = Float(0)
     var primRef: Sphere? = nil
     var primType: PrimativeType = .sphere
 }
@@ -195,8 +195,8 @@ struct Ray {
     var B: V3
 
     // NOTE: (Kapsy) For C union like behavior.
-    var orig: V3 { get { return A } }
-    var dir: V3 { get { return B } }
+    var origin: V3 { get { return A } }
+    var direction: V3 { get { return B } }
 
     init(_ A: V3, _ B: V3) {
         self.A = A
@@ -242,12 +242,12 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
 
     for sphere in globalSpheres {
 
-        let rad = sphere.rad
+        let rad = sphere.radius
         let center = sphere.center
-        let oc = ray.orig - center
+        let oc = ray.origin - center
 
-        let a = dot(ray.dir, ray.dir)
-        let b = dot(oc, ray.dir)
+        let a = dot(ray.direction, ray.direction)
+        let b = dot(oc, ray.direction)
         let c = dot(oc, oc) - rad * rad
         let discriminant = b * b - a * c;
 
@@ -258,7 +258,7 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
             {
                 tfar = t
 
-                hit.dist = t;
+                hit.distance = t;
                 hit.primRef = sphere
                 hit.primType = .sphere;
             }
@@ -268,7 +268,7 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
             {
                 tfar = t
 
-                hit.dist = t;
+                hit.distance = t;
                 hit.primRef = sphere
                 hit.primType = .sphere;
             }
@@ -283,11 +283,11 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
     var res = V3()
 
     var hit = HitRecord()
-    hit.dist = Float.greatestFiniteMagnitude
+    hit.distance = Float.greatestFiniteMagnitude
 
     traverseSpheres(&ray, &hit)
 
-    if hit.dist < Float.greatestFiniteMagnitude {
+    if hit.distance < Float.greatestFiniteMagnitude {
 
         var p = V3(0)
         var N = V3(0)
@@ -299,10 +299,10 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
             if let sphere = hit.primRef {
 
-                let rad = sphere.rad
+                let rad = sphere.radius
                 let center = sphere.center
 
-                p = ray.pointAt(hit.dist)
+                p = ray.pointAt(hit.distance)
                 N = (p - center) / rad
                 mat = sphere.material
             }
@@ -330,7 +330,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
             case .metal(let fuzz):
 
-                let v = unit(ray.dir)
+                let v = unit(ray.direction)
                 let reflected = v - 2*dot(v, N)*N
                 let bias = N*1e-4
 
@@ -339,7 +339,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                 let albedo = mat.texture.getAlbedo(0, 0, p)
 
                 // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
-                let result = (dot(scattered.dir, N) > 0.0)
+                let result = (dot(scattered.direction, N) > 0.0)
                 if (depth < MAX_DEPTH && result) {
                     res = albedo * getColorForRay(&scattered, depth+1)
                 } else {
@@ -352,21 +352,21 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
 
                     var outwardNormal = V3(0)
                     var niOverNt = Float(0)
-                    let reflected = reflect(ray.dir, N)
+                    let reflected = reflect(ray.direction, N)
 
                     var reflectProb = Float(0)
                     var cos = Float(0)
 
-                    if dot(ray.dir, N) > 0.0 {
+                    if dot(ray.direction, N) > 0.0 {
                         outwardNormal = -N
                         niOverNt = refIndex
-                        cos = refIndex*dot(ray.dir, N)/length(ray.dir)
+                        cos = refIndex*dot(ray.direction, N)/length(ray.direction)
                     }
                     else
                     {
                         outwardNormal = N
                         niOverNt = 1.0 / refIndex
-                        cos = -dot(ray.dir, N) / length(ray.dir)
+                        cos = -dot(ray.direction, N) / length(ray.direction)
                     }
 
                     var refracted = V3(0.0)
@@ -374,7 +374,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                     let bias = outwardNormal*1e-2
                     p = p - bias
 
-                    let uv = unit(ray.dir)
+                    let uv = unit(ray.direction)
                     let dt = dot(uv, outwardNormal)
                     let discriminant = 1.0 - niOverNt*niOverNt*(1.0 - dt*dt)
 
@@ -404,7 +404,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
     } else {
 
         // NOTE: (Kapsy) Draw our psuedo sky background.
-        let rdir = ray.dir
+        let rdir = ray.direction
 
         let t = (unit(rdir).y + 1.0)*0.5
         let cola = V3(1.0)
@@ -424,62 +424,62 @@ extension ContentView {
         perlinTexture.albedo = V3(1,1,1)
         perlinTexture.type = .perlin(Perlin())
         let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
-        let sphere0 = Sphere(center: V3(0, 0.32, 0), rad: 0.34, material: sphere0Mat)
+        let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
         globalSpheres.append(sphere0)
 
         var glassTexture = Texture()
         glassTexture.albedo = V3(1)
         let sphere1Mat = Material(type: .dielectric(refIndex: 1.1), texture: glassTexture)
-        let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), rad: -0.23, material: sphere1Mat)
+        let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), radius: -0.23, material: sphere1Mat)
         globalSpheres.append(sphere1)
 
         var whiteTexture = Texture()
         whiteTexture.albedo = V3(1,0.97,0.97)
         let sphere2Mat = Material(type: .metal(fuzz: 0.24), texture: whiteTexture)
-        let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), rad: 0.24, material: sphere2Mat)
+        let sphere2 = Sphere(center: V3(-0.7, 0.3, 0), radius: 0.24, material: sphere2Mat)
         globalSpheres.append(sphere2)
 
         var groundTexture = Texture()
         groundTexture.albedo = V3(0.2,0.5,0.3)
         groundTexture.type = .checker
         let sphere3Mat = Material(type: .lambertian, texture: groundTexture)
-        let sphere3 = Sphere(center: V3(0, -99.99, 0), rad: 100.0, material: sphere3Mat)
+        let sphere3 = Sphere(center: V3(0, -99.99, 0), radius: 100.0, material: sphere3Mat)
         globalSpheres.append(sphere3)
 
         var greenTexture = Texture()
         greenTexture.albedo = V3(0,1.3,0)
         let sphere4Mat = Material(type: .lambertian, texture: greenTexture)
-        let sphere4 = Sphere(center: V3(0.0, 0.3, 0.5), rad: 0.13, material: sphere4Mat)
+        let sphere4 = Sphere(center: V3(0.0, 0.3, 0.5), radius: 0.13, material: sphere4Mat)
         globalSpheres.append(sphere4)
 
         var redTexture = Texture()
         redTexture.albedo = V3(2,0.3,0.3)
         let sphere5Mat = Material(type: .lambertian, texture: redTexture)
-        let sphere5 = Sphere(center: V3(0.1, 0.3, -0.6), rad: 0.16, material: sphere5Mat)
+        let sphere5 = Sphere(center: V3(0.1, 0.3, -0.6), radius: 0.16, material: sphere5Mat)
         globalSpheres.append(sphere5)
 
         var purpleTexture = Texture()
         purpleTexture.albedo = V3(1,0,1)
         let sphere6Mat = Material(type: .metal(fuzz: 0.2), texture: purpleTexture)
-        let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), rad: 0.33, material: sphere6Mat)
+        let sphere6 = Sphere(center: V3(0.68, 0.33, 0.79), radius: 0.33, material: sphere6Mat)
         globalSpheres.append(sphere6)
 
         var blueTexture = Texture()
         blueTexture.albedo = V3(0.2,0.2,3)
         let sphere7Mat = Material(type: .lambertian, texture: blueTexture)
-        let sphere7 = Sphere(center: V3(-0.5, 0.3, -0.9), rad: 0.13, material: sphere7Mat)
+        let sphere7 = Sphere(center: V3(-0.5, 0.3, -0.9), radius: 0.13, material: sphere7Mat)
         globalSpheres.append(sphere7)
 
         var purple2Texture = Texture()
         purple2Texture.albedo = V3(1,1,1)
         let sphere8Mat = Material(type: .dielectric(refIndex: 1.1), texture: purple2Texture)
-        let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), rad: 0.18, material: sphere8Mat)
+        let sphere8 = Sphere(center: V3(-0.6, 0.24, 0.6), radius: 0.18, material: sphere8Mat)
         globalSpheres.append(sphere8)
 
         var metalTexture = Texture()
         metalTexture.albedo = V3(0,1,1)
         let sphere9Mat = Material(type: .metal(fuzz: 0.3), texture: metalTexture)
-        let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), rad: 0.10, material: sphere9Mat)
+        let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), radius: 0.10, material: sphere9Mat)
         globalSpheres.append(sphere9)
         data.reserveCapacity(nx * ny)
     }
