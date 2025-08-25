@@ -27,7 +27,7 @@ struct ContentView: View {
         .task {
             setup()
             while !Task.isCancelled {
-                raytraceFrame()
+                await raytraceFrame()
                 pixels = data
                 try? await Task.sleep(for: .milliseconds(10))
             }

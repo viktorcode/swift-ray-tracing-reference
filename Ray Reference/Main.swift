@@ -484,7 +484,7 @@ extension ContentView {
         data.reserveCapacity(nx * ny)
     }
 
-    func raytraceFrame() {
+    func raytraceFrame() async {
         // NOTE: (Kapsy) Primary rays per pixel
         let ns = Int(30)
 
