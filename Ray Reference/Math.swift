@@ -12,10 +12,6 @@ func filterNaN(_ value: Float) -> Float {
     return value.isNaN ? 0.0 : value
 }
 
-func drand48f() -> Float {
-    return Float.random(in: 0..<1, using: &generator)
-}
-
 func clamp01(_ a: Float) -> Float {
     if a > 1.0 {
         return 1.0
@@ -134,7 +130,7 @@ func randomInUnitSphere() -> V3 {
     var v = V3(0)
 
     repeat {
-        v = 2.0*V3(drand48f(), drand48f(), drand48f()) - V3(1)
+        v = 2.0*V3(Float.random(in: 0..<1, using: &generator), Float.random(in: 0..<1, using: &generator), Float.random(in: 0..<1, using: &generator)) - V3(1)
     } while squaredLen(v) >= 1.0
 
     return (v);

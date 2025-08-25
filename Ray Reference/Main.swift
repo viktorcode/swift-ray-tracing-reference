@@ -5,7 +5,7 @@ import Foundation
 var PERLIN_N: Int = (1 << 8)
 
 func permuteAxis(_ axis: inout [Int], _ i: Int) {
-    let tar = Int(drand48f() * Float(i + 1))
+    let tar = Int(Float.random(in: 0..<1, using: &generator) * Float(i + 1))
     let tmp = axis[i]
     axis[i] = axis[tar]
     axis[tar] = tmp
@@ -26,7 +26,7 @@ struct Perlin {
         self.permY = [Int](repeating: 0, count: PERLIN_N)
         self.permZ = [Int](repeating: 0, count: PERLIN_N)
 
-        self.randFloat = (0..<N).map { _ in drand48f() }
+        self.randFloat = (0..<N).map { _ in Float.random(in: 0..<1, using: &generator) }
 
         for i in 0..<N {
             self.permX[i] = i
@@ -214,11 +214,11 @@ extension Camera {
         Ray(origin, lowerLeft + s * horiz + t * vert - origin)
     }
 
-    func getRay(_ s: Float, _ t: Float) -> Ray {
+    func getRay(_ s: Float, _ t: Float, random: inout some RandomNumberGenerator) -> Ray {
         // NOTE: (Kapsy) Random in unit disk.
         var rand = V3(0)
         repeat  {
-            rand = 2.0 * V3(drand48f(), drand48f(), 0) - V3(1,1,0)
+            rand = 2.0 * V3(Float.random(in: 0..<1, using: &random), Float.random(in: 0..<1, using: &random), 0) - V3(1,1,0)
         } while dot(rand, rand) >= 1.0
 
         let rd = lensRad * rand;
@@ -278,7 +278,7 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
 
 var MAX_DEPTH = Int(10)
 
-func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
+func getColorForRay(_ ray: inout Ray, _ depth: Int, random: inout some RandomNumberGenerator) -> V3 {
 
     var res = V3()
 
@@ -323,7 +323,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                 var scattered = Ray(p, target - p)
 
                 if depth < MAX_DEPTH {
-                    res = albedo*getColorForRay(&scattered, depth+1)
+                    res = albedo * getColorForRay(&scattered, depth + 1, random: &random)
                 } else {
                     res = V3(0)
                 }
@@ -341,7 +341,7 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                 // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                 let result = (dot(scattered.direction, N) > 0.0)
                 if (depth < MAX_DEPTH && result) {
-                    res = albedo * getColorForRay(&scattered, depth+1)
+                    res = albedo * getColorForRay(&scattered, depth + 1, random: &random)
                 } else {
                     res = V3(0.0)
                 }
@@ -387,14 +387,14 @@ func getColorForRay(_ ray: inout Ray, _ depth: Int) -> V3 {
                         reflectProb = 1.0
                     }
 
-                    if drand48f() < reflectProb {
+                    if Float.random(in: 0..<1, using: &random) < reflectProb {
                         scattered = Ray(p, reflected)
                     } else {
                         scattered = Ray(p, refracted)
                     }
 
                     if depth < MAX_DEPTH {
-                        res = getColorForRay(&scattered, depth+1)
+                        res = getColorForRay(&scattered, depth + 1, random: &random)
                     } else {
                         res = V3 (0.0)
                     }
@@ -525,18 +525,19 @@ extension ContentView {
 
             var row: [V3] = []
             row.reserveCapacity(nx)
+            var random = Wyrand()
             for i in 0..<nx {
 
                 var col = V3(0)
 
                 for _ in 0..<ns {
 
-                    let u = (Float(i) + drand48f())/Float(nx)
-                    let v = (Float(j) + drand48f())/Float(ny)
+                    let u = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(nx)
+                    let v = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(ny)
 
-                    var r = cam.getRay(u, v)
+                    var r = cam.getRay(u, v, random: &random)
 
-                    col += getColorForRay(&r, 0)
+                    col += getColorForRay(&r, 0, random: &random)
                 }
 
                 // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
