@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: Perlin Noise
 
-var PERLIN_N: Int = (1 << 8)
+let PERLIN_N: Int = (1 << 8)
 
 func permuteAxis(_ axis: inout [Int], _ i: Int) {
     let tar = Int(Float.random(in: 0..<1, using: &generator) * Float(i + 1))
@@ -276,7 +276,7 @@ func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
     }
 }
 
-var MAX_DEPTH = Int(10)
+let MAX_DEPTH = Int(10)
 
 func getColorForRay(_ ray: inout Ray, _ depth: Int, random: inout some RandomNumberGenerator) -> V3 {
 
