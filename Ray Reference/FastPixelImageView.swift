@@ -2,15 +2,11 @@ import SwiftUI
 import CoreGraphics
 
 struct FastPixelImageView: View {
-    let bitmap: [[V3]]
-    let width: Int
-    let height: Int
     let cgImage: CGImage?
 
     init(bitmap: [[V3]]) {
-        self.bitmap = bitmap
-        self.height = bitmap.count
-        self.width = bitmap.first?.count ?? 0
+        let height = bitmap.count
+        let width = bitmap.first?.count ?? 0
         let startTime = CFAbsoluteTimeGetCurrent()
         self.cgImage = FastPixelImageView.makeCGImage(bitmap: bitmap, width: width, height: height)
         let renderingTime = CFAbsoluteTimeGetCurrent() - startTime
@@ -30,14 +26,14 @@ struct FastPixelImageView: View {
     
     static func makeCGImage(bitmap: [[V3]], width: Int, height: Int) -> CGImage? {
         guard width > 0, height > 0 else { return nil }
-        var data = [UInt8](repeating: 0, count: width*height*4)
+        var data = [UInt8](repeating: 0, count: width * height * 4)
         for y in 0..<height {
             for x in 0..<width {
-                let offset = 4*(y*width + x)
+                let offset = 4 * (y * width + x)
                 let color = bitmap[y][x]
-                data[offset] = UInt8((color.r*255).rounded())
-                data[offset+1] = UInt8((color.g*255).rounded())
-                data[offset+2] = UInt8((color.b*255).rounded())
+                data[offset] = UInt8((color.r * 255).rounded())
+                data[offset+1] = UInt8((color.g * 255).rounded())
+                data[offset+2] = UInt8((color.b * 255).rounded())
                 data[offset+3] = UInt8(255)
             }
         }

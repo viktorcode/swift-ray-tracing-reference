@@ -22,9 +22,9 @@ func clamp01(_ a: Float) -> Float {
 // MARK: V3
 
 struct V3 {
-    var x = Float(0)
-    var y = Float(0)
-    var z = Float(0)
+    var x: Float = 0
+    var y: Float = 0
+    var z: Float = 0
 
     // NOTE: (Kapsy) For C union like behavior.
     var r: Float { get { return x } set(a) { self.x = a } }

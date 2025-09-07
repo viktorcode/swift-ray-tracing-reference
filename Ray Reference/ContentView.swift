@@ -25,12 +25,16 @@ struct ContentView: View {
             FastPixelImageView(bitmap: pixels)
         }
         .task {
-            let scene = setup()
-            while !Task.isCancelled {
-                await raytraceFrame(in: scene)
-                pixels = data
-                try? await Task.sleep(for: .milliseconds(10))
-            }
+            await doWork()
+        }
+    }
+
+    func doWork() async {
+        let scene = setup()
+        while !Task.isCancelled {
+            await raytraceFrame(in: scene)
+            pixels = data
+            try? await Task.sleep(for: .milliseconds(10))
         }
     }
 }

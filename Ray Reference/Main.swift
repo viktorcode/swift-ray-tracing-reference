@@ -167,17 +167,16 @@ enum PrimativeType {
 // MARK: Camera
 
 struct Camera {
+    var origin: V3 = V3()
+    var lowerLeft: V3 = V3()
+    var horiz: V3 = V3()
+    var vert: V3 = V3()
 
-    var origin = V3(0)
-    var lowerLeft = V3(0)
-    var horiz = V3(0)
-    var vert = V3(0)
+    var w: V3 = V3()
+    var u: V3 = V3()
+    var v: V3 = V3()
 
-    var w = V3(0)
-    var u = V3(0)
-    var v = V3(0)
-
-    var lensRad = Float(0)
+    var lensRad: Float = 0
 }
 
 // MARK: Ray
@@ -209,10 +208,6 @@ struct Ray {
 }
 
 extension Camera {
-    func getRayTemp( _ s: Float, _ t: Float) -> Ray {
-        Ray(origin, lowerLeft + s * horiz + t * vert - origin)
-    }
-
     func getRay(_ s: Float, _ t: Float, random: inout some RandomNumberGenerator) -> Ray {
         // NOTE: (Kapsy) Random in unit disk.
         var rand = V3(0)
@@ -327,7 +322,7 @@ extension Array where Element == Sphere {
                     if depth < MAX_DEPTH {
                         res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
-                        res = V3(0)
+                        res = V3()
                     }
 
                 case .metal(let fuzz):
@@ -345,7 +340,7 @@ extension Array where Element == Sphere {
                     if (depth < MAX_DEPTH && result) {
                         res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
-                        res = V3(0.0)
+                        res = V3()
                     }
 
                 case .dielectric(let refIndex):
@@ -371,7 +366,7 @@ extension Array where Element == Sphere {
                         cos = -dot(ray.direction, N) / length(ray.direction)
                     }
 
-                    var refracted = V3(0.0)
+                    var refracted = V3()
 
                     let bias = outwardNormal*1e-2
                     p = p - bias
@@ -398,7 +393,7 @@ extension Array where Element == Sphere {
                     if depth < MAX_DEPTH {
                         res = getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
-                        res = V3 (0.0)
+                        res = V3()
                     }
                 }
             }
@@ -494,14 +489,11 @@ extension ContentView {
         // NOTE: (Kapsy) Primary rays per pixel
         let ns = Int(30)
 
-        //        for _ in 0..<Int(frameCount) {
         let startTime = CFAbsoluteTimeGetCurrent()
 
         data.removeAll(keepingCapacity: true)
 
         // NOTE: (Kapsy) Camera setup stuff.
-
-        var cam = Camera()
 
         var lookFromRes = lookFrom
         lookFromRes = lookFromRes*((-cos(ellipsePhase) + 1.0) * 0.07 + 1.3);
@@ -512,20 +504,20 @@ extension ContentView {
         let aperture = Float(0.09)
         let focusDist = length(lookFromRes - lookAt)
 
-        cam.lensRad = aperture/2.0;
-
         let theta = vfov*Float.pi/180
         let halfHeight = tan(theta/2)
         let halfWidth = Float(aspect*halfHeight)
 
-        cam.origin = lookFromRes
-        cam.w = unit(lookFromRes - lookAt)
-        cam.u = unit(cross(vup, cam.w))
-        cam.v = cross(cam.w, cam.u)
+        let w = unit(lookFromRes - lookAt)
+        let u = unit(cross(vup, w))
+        let v = cross(w, u)
 
-        cam.lowerLeft = cam.origin - halfWidth*focusDist*cam.u - halfHeight*focusDist*cam.v - focusDist*cam.w
-        cam.horiz = 2*halfWidth*focusDist*cam.u
-        cam.vert = 2*halfHeight*focusDist*cam.v
+        let camera = Camera(origin: lookFromRes,
+                            lowerLeft: lookFromRes - halfWidth * focusDist * u - halfHeight * focusDist * v - focusDist * w,
+                            horiz: 2 * halfWidth * focusDist * u,
+                            vert: 2 * halfHeight * focusDist * v,
+                            w: w, u: u, v: v,
+                            lensRad: aperture/2.0)
 
         for j in (0..<ny).reversed() {
 
@@ -541,7 +533,7 @@ extension ContentView {
                     let u = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(nx)
                     let v = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(ny)
 
-                    var r = cam.getRay(u, v, random: &random)
+                    var r = camera.getRay(u, v, random: &random)
 
                     col += scene.getColorForRay(&r, 0, using: &random)
                 }
@@ -564,11 +556,10 @@ extension ContentView {
         print("Time spent raytracing: \(raytracingTime)s")
 
         // NOTE: (Kapsy) Rodrigues Rotation formula
-        var v = lookFrom
-        v = v*cos(omega) + cross(k, v)*sin(omega) + k*dot(k, v)*(1.0 - cos(omega))
-        lookFrom = v
+        var vector = lookFrom
+        vector = vector * cos(omega) + cross(k, vector) * sin(omega) + k * dot(k, v) * (1.0 - cos(omega))
+        lookFrom = vector
 
         ellipsePhase += omega
-        //        }
     }
 }
