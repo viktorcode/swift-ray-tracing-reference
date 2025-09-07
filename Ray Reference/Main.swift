@@ -89,7 +89,7 @@ extension Perlin {
 enum TextureType {
     case plain
     case checker
-    case perlin(Perlin)
+ //   case perlin(Perlin)
 }
 
 struct Texture {
@@ -131,8 +131,8 @@ extension Texture {
         case .plain:
             res = albedo
 
-        case .perlin(let perlin):
-            res = V3(1.0) * perlin.getNoise(p)
+//        case .perlin(let perlin):
+//            res = V3(1.0) * perlin.getNoise(p)
         }
 
         return res
@@ -419,12 +419,12 @@ extension ContentView {
         // MARK: Init spheres
         var spheres: [Sphere] = []
 
-        var perlinTexture = Texture()
-        perlinTexture.albedo = V3(1,1,1)
-        perlinTexture.type = .perlin(Perlin())
-        let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
-        let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
-        spheres.append(sphere0)
+//        var perlinTexture = Texture()
+//        perlinTexture.albedo = V3(1,1,1)
+//        perlinTexture.type = .perlin(Perlin())
+//        let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
+//        let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
+//        spheres.append(sphere0)
 
         var glassTexture = Texture()
         glassTexture.albedo = V3(1)
@@ -519,33 +519,46 @@ extension ContentView {
                             w: w, u: u, v: v,
                             lensRad: aperture/2.0)
 
-        for j in (0..<ny).reversed() {
+        // Compute rows in parallel using a task group.
+        let width = nx
+        let height = ny
+        var results: [(Int, [V3])] = []
+        results.reserveCapacity(height)
 
-            var row: [V3] = []
-            row.reserveCapacity(nx)
-            var random = Wyrand()
-            for i in 0..<nx {
-
-                var col = V3(0)
-
-                for _ in 0..<ns {
-
-                    let u = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(nx)
-                    let v = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(ny)
-
-                    var r = camera.getRay(u, v, random: &random)
-
-                    col += scene.getColorForRay(&r, 0, using: &random)
+        await withTaskGroup(of: (Int, [V3]).self) { group in
+            for j in 0..<height {
+                group.addTask {
+                    var row: [V3] = []
+                    row.reserveCapacity(width)
+                    var random = Wyrand()
+                    for i in 0..<width {
+                        var col = V3(0)
+                        for _ in 0..<ns {
+                            let uVal = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(width)
+                            let vVal = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(height)
+                            var r = camera.getRay(uVal, vVal, random: &random)
+                            col += scene.getColorForRay(&r, 0, using: &random)
+                        }
+                        col /= Float(ns)
+                        col.r = clamp01(col.r)
+                        col.g = clamp01(col.g)
+                        col.b = clamp01(col.b)
+                        row.append(col)
+                    }
+                    // Original code wrote rows in reversed order
+                    let rowIndex = height - j - 1
+                    return (rowIndex, row)
                 }
-
-                col /= Float(ns)
-
-                col.r = clamp01(col.r)
-                col.g = clamp01(col.g)
-                col.b = clamp01(col.b)
-                row.append(col)
             }
-            data[ny - j - 1] = row
+
+            for await result in group {
+                results.append(result)
+            }
+        }
+
+        // Apply results and update state on the main actor
+        for (rowIndex, row) in results {
+            data[rowIndex] = row
         }
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
         print("Time spent raytracing: \(raytracingTime)s")
