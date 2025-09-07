@@ -6,8 +6,6 @@ func assertNaN(_ value: Float) {
     assert(!value.isNaN)
 }
 
-var generator = Wyrand()
-
 func filterNaN(_ value: Float) -> Float {
     return value.isNaN ? 0.0 : value
 }
@@ -126,7 +124,7 @@ func squaredLen(_ v: V3) -> Float {
     return dot(v, v)
 }
 
-func randomInUnitSphere() -> V3 {
+func randomInUnitSphere<T>(using generator: inout T) -> V3 where T : RandomNumberGenerator {
     var v = V3(0)
 
     repeat {
