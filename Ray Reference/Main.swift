@@ -4,7 +4,7 @@ import Foundation
 
 let PERLIN_N: Int = (1 << 8)
 
-func permuteAxis<T>(_ axis: inout [Int], _ i: Int, using generator: inout T) where T : RandomNumberGenerator {
+func permuteAxis(_ axis: inout [Int], _ i: Int, using generator: inout some RandomNumberGenerator) {
     let tar = Int(Float.random(in: 0..<1, using: &generator) * Float(i + 1))
     let tmp = axis[i]
     axis[i] = axis[tar]
@@ -280,7 +280,7 @@ extension Array where Element == Sphere {
 let MAX_DEPTH = Int(10)
 
 extension Array where Element == Sphere {
-    func getColorForRay(_ ray: inout Ray, _ depth: Int, random: inout some RandomNumberGenerator) -> V3 {
+    func getColorForRay(_ ray: inout Ray, _ depth: Int, using random: inout some RandomNumberGenerator) -> V3 {
 
         var res = V3()
 
@@ -325,7 +325,7 @@ extension Array where Element == Sphere {
                     var scattered = Ray(p, target - p)
 
                     if depth < MAX_DEPTH {
-                        res = albedo * getColorForRay(&scattered, depth + 1, random: &random)
+                        res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
                         res = V3(0)
                     }
@@ -343,7 +343,7 @@ extension Array where Element == Sphere {
                     // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                     let result = (dot(scattered.direction, N) > 0.0)
                     if (depth < MAX_DEPTH && result) {
-                        res = albedo * getColorForRay(&scattered, depth + 1, random: &random)
+                        res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
                         res = V3(0.0)
                     }
@@ -396,7 +396,7 @@ extension Array where Element == Sphere {
                     }
 
                     if depth < MAX_DEPTH {
-                        res = getColorForRay(&scattered, depth + 1, random: &random)
+                        res = getColorForRay(&scattered, depth + 1, using: &random)
                     } else {
                         res = V3 (0.0)
                     }
@@ -543,7 +543,7 @@ extension ContentView {
 
                     var r = cam.getRay(u, v, random: &random)
 
-                    col += scene.getColorForRay(&r, 0, random: &random)
+                    col += scene.getColorForRay(&r, 0, using: &random)
                 }
 
                 // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.

@@ -124,7 +124,7 @@ func squaredLen(_ v: V3) -> Float {
     return dot(v, v)
 }
 
-func randomInUnitSphere<T>(using generator: inout T) -> V3 where T : RandomNumberGenerator {
+func randomInUnitSphere(using generator: inout some RandomNumberGenerator) -> V3 {
     var v = V3(0)
 
     repeat {
