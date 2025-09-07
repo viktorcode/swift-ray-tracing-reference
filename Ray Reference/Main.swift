@@ -481,6 +481,9 @@ extension ContentView {
         let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), radius: 0.10, material: sphere9Mat)
         spheres.append(sphere9)
         data.reserveCapacity(nx * ny)
+        (0..<ny).forEach { _ in
+            data.append([])
+        }
 
         return spheres
     }
@@ -491,10 +494,7 @@ extension ContentView {
 
         let startTime = CFAbsoluteTimeGetCurrent()
 
-        data.removeAll(keepingCapacity: true)
-
         // NOTE: (Kapsy) Camera setup stuff.
-
         var lookFromRes = lookFrom
         lookFromRes = lookFromRes*((-cos(ellipsePhase) + 1.0) * 0.07 + 1.3);
 
@@ -538,11 +538,6 @@ extension ContentView {
                     col += scene.getColorForRay(&r, 0, using: &random)
                 }
 
-                // NOTE: (Kapsy) Filter NaNs. Probably caused by drand48f() returning 1.0, need to investigate.
-                //                col.r = filterNaN(col.r)
-                //                col.g = filterNaN(col.g)
-                //                col.b = filterNaN(col.b)
-
                 col /= Float(ns)
 
                 col.r = clamp01(col.r)
@@ -550,7 +545,7 @@ extension ContentView {
                 col.b = clamp01(col.b)
                 row.append(col)
             }
-            data.append(row)
+            data[ny - j - 1] = row
         }
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
         print("Time spent raytracing: \(raytracingTime)s")
