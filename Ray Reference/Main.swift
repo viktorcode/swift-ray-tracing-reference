@@ -11,38 +11,6 @@ func permuteAxis(_ axis: inout [Int], _ i: Int, using generator: inout some Rand
     axis[tar] = tmp
 }
 
-// NOTE: (Kapsy) This is an incomplete implementation!
-struct Perlin {
-    var permX: [Int]
-    var permY: [Int]
-    var permZ: [Int]
-
-    let randFloat: [Float]
-
-    init() {
-        let N = PERLIN_N
-        var random = Wyrand()
-
-        self.permX = [Int](repeating: 0, count: PERLIN_N)
-        self.permY = [Int](repeating: 0, count: PERLIN_N)
-        self.permZ = [Int](repeating: 0, count: PERLIN_N)
-
-        self.randFloat = (0..<N).map { _ in Float.random(in: 0..<1, using: &random) }
-
-        for i in 0..<N {
-            self.permX[i] = i
-            self.permY[i] = i
-            self.permZ[i] = i
-        }
-
-        for i in (0..<N).reversed() {
-            permuteAxis(&self.permX, i, using: &random)
-            permuteAxis(&self.permY, i, using: &random)
-            permuteAxis(&self.permZ, i, using: &random)
-        }
-    }
-}
-
 extension Perlin {
     func getNoise(_ p0: V3) -> Float {
 
@@ -84,35 +52,17 @@ extension Perlin {
         return accum
     }
 }
-// MARK: Texture
 
-enum TextureType {
-    case plain
-    case checker
- //   case perlin(Perlin)
+func schlick(_ cos: Float, _ refIndex: Float) -> Float {
+    var r0 = (1.0 - refIndex) / (1.0 + refIndex);
+    r0 = r0 * r0;
+    r0 = r0 + (1.0 - r0) * pow((1.0 - cos), 5.0);
+
+    return r0
 }
 
-struct Texture {
-    var type: TextureType = .plain
-    var albedo = V3(0)
-}
-
-// MARK: Material
-
-enum MaterialType {
-    case lambertian
-    case metal(fuzz: Float)
-    case dielectric(refIndex: Float)
-}
-
-struct Material {
-    let type: MaterialType
-    let texture: Texture
-
-    init(type: MaterialType, texture: Texture) {
-        self.type = type
-        self.texture = texture
-    }
+func reflect(_ v: V3, _ N: V3) -> V3 {
+    v - 2 * dot(v, N) * N
 }
 
 extension Texture {
@@ -131,79 +81,11 @@ extension Texture {
         case .plain:
             res = albedo
 
-//        case .perlin(let perlin):
-//            res = V3(1.0) * perlin.getNoise(p)
+        case .perlin(let perlin):
+            res = V3(1.0) * perlin.getNoise(p)
         }
 
         return res
-    }
-}
-
-func schlick(_ cos: Float, _ refIndex: Float) -> Float {
-    var r0 = (1.0 - refIndex) / (1.0 + refIndex);
-    r0 = r0 * r0;
-    r0 = r0 + (1.0 - r0) * pow((1.0 - cos), 5.0);
-
-    return r0
-}
-
-func reflect(_ v: V3, _ N: V3) -> V3 {
-    v - 2 * dot(v, N) * N
-}
-
-// MARK: Sphere
-
-struct Sphere {
-    let center: V3
-    let radius: Float
-    let material: Material
-}
-
-enum PrimativeType {
-    case sphere
-    case triangle
-}
-
-// MARK: Camera
-
-struct Camera {
-    var origin: V3 = V3()
-    var lowerLeft: V3 = V3()
-    var horiz: V3 = V3()
-    var vert: V3 = V3()
-
-    var w: V3 = V3()
-    var u: V3 = V3()
-    var v: V3 = V3()
-
-    var lensRad: Float = 0
-}
-
-// MARK: Ray
-
-struct HitRecord {
-    var distance = Float(0)
-    var primRef: Sphere? = nil
-    var primType: PrimativeType = .sphere
-}
-
-struct Ray {
-
-    var A: V3
-    var B: V3
-
-    // NOTE: (Kapsy) For C union like behavior.
-    var origin: V3 { get { return A } }
-    var direction: V3 { get { return B } }
-
-    init(_ A: V3, _ B: V3) {
-        self.A = A
-        self.B = B
-    }
-
-    init() {
-        self.A = V3(0)
-        self.B = V3(0)
     }
 }
 
@@ -274,7 +156,7 @@ extension Array where Element == Sphere {
 
 let MAX_DEPTH = Int(10)
 
-extension Array where Element == Sphere {
+extension SceneModel {
     func getColorForRay(_ ray: inout Ray, _ depth: Int, using random: inout some RandomNumberGenerator) -> V3 {
 
         var res = V3()
@@ -282,7 +164,7 @@ extension Array where Element == Sphere {
         var hit = HitRecord()
         hit.distance = Float.greatestFiniteMagnitude
 
-        traverseSpheres(&ray, &hit)
+        spheres.traverseSpheres(&ray, &hit)
 
         if hit.distance < Float.greatestFiniteMagnitude {
 
@@ -415,16 +297,16 @@ extension Array where Element == Sphere {
 }
 
 extension ContentView {
-    func setup() -> [Sphere] {
+    func setup() -> SceneModel {
         // MARK: Init spheres
         var spheres: [Sphere] = []
 
-//        var perlinTexture = Texture()
-//        perlinTexture.albedo = V3(1,1,1)
-//        perlinTexture.type = .perlin(Perlin())
-//        let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
-//        let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
-//        spheres.append(sphere0)
+        var perlinTexture = Texture()
+        perlinTexture.albedo = V3(1,1,1)
+        perlinTexture.type = .perlin(Perlin())
+        let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
+        let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
+        spheres.append(sphere0)
 
         var glassTexture = Texture()
         glassTexture.albedo = V3(1)
@@ -485,10 +367,10 @@ extension ContentView {
             data.append([])
         }
 
-        return spheres
+        return SceneModel(spheres: spheres)
     }
 
-    func raytraceFrame(in scene: [Sphere]) async {
+    func raytraceFrame(in scene: SceneModel) async {
         // NOTE: (Kapsy) Primary rays per pixel
         let ns = Int(30)
 
