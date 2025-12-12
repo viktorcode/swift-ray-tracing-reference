@@ -12,7 +12,7 @@ import Foundation
 enum TextureType {
     case plain
     case checker
-    case perlin(Perlin)
+    case perlin(Int)
 }
 
 struct Texture {
@@ -129,5 +129,6 @@ struct Perlin {
 
 struct SceneModel {
     let spheres: [Sphere]
+    let perlin: [Perlin]
 }
 

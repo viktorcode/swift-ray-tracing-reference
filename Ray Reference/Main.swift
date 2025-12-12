@@ -65,11 +65,11 @@ func reflect(_ v: V3, _ N: V3) -> V3 {
     v - 2 * dot(v, N) * N
 }
 
-extension Texture {
-    func getAlbedo(_ u: Float, _ v: Float, _ p: V3) -> V3 {
+extension SceneModel {
+    func getAlbedo(_ u: Float, _ v: Float, _ p: V3, texture: Texture) -> V3 {
         let res: V3
 
-        switch type {
+        switch texture.type {
         case .checker:
             let selector = Float(sin(10.0 * p.x) * sin(10.0 * p.z))
             if selector > 0.0 {
@@ -79,10 +79,10 @@ extension Texture {
             }
 
         case .plain:
-            res = albedo
+            res = texture.albedo
 
-        case .perlin(let perlin):
-            res = V3(1.0) * perlin.getNoise(p)
+        case .perlin(let index):
+            res = V3(1.0) * perlin[index].getNoise(p)
         }
 
         return res
@@ -198,7 +198,7 @@ extension SceneModel {
 
                     let rand = randomInUnitSphere(using: &random)
                     let target = p + N + rand
-                    let albedo = mat.texture.getAlbedo(0, 0, p)
+                    let albedo = getAlbedo(0, 0, p, texture: mat.texture)
                     var scattered = Ray(p, target - p)
 
                     if depth < MAX_DEPTH {
@@ -215,7 +215,7 @@ extension SceneModel {
 
                     var scattered = Ray(p + bias, reflected + fuzz * randomInUnitSphere(using: &random))
 
-                    let albedo = mat.texture.getAlbedo(0, 0, p)
+                    let albedo = getAlbedo(0, 0, p, texture: mat.texture)
 
                     // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                     let result = (dot(scattered.direction, N) > 0.0)
@@ -303,7 +303,7 @@ extension ContentView {
 
         var perlinTexture = Texture()
         perlinTexture.albedo = V3(1,1,1)
-        perlinTexture.type = .perlin(Perlin())
+        perlinTexture.type = .perlin(0)
         let sphere0Mat = Material(type: .lambertian, texture: perlinTexture)
         let sphere0 = Sphere(center: V3(0, 0.32, 0), radius: 0.34, material: sphere0Mat)
         spheres.append(sphere0)
@@ -367,7 +367,7 @@ extension ContentView {
             data.append([])
         }
 
-        return SceneModel(spheres: spheres)
+        return SceneModel(spheres: spheres, perlin: [Perlin()])
     }
 
     func raytraceFrame(in scene: SceneModel) async {
