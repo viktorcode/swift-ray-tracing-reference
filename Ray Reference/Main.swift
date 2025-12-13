@@ -112,7 +112,7 @@ extension Ray {
 }
 
 extension Array where Element == Sphere {
-    func traverseSpheres(_ ray: inout Ray, _ hit: inout HitRecord) {
+    func traverseSpheres(_ ray: Ray, _ hit: inout HitRecord) {
 
         let tnear = Float(0.001)
         var tfar = Float.greatestFiniteMagnitude
@@ -157,14 +157,14 @@ extension Array where Element == Sphere {
 let MAX_DEPTH = Int(10)
 
 extension SceneModel {
-    func getColorForRay(_ ray: inout Ray, _ depth: Int, using random: inout some RandomNumberGenerator) -> V3 {
+    func getColorForRay(_ ray: Ray, _ depth: Int, using random: inout some RandomNumberGenerator) -> V3 {
 
         var res = V3()
 
         var hit = HitRecord()
         hit.distance = Float.greatestFiniteMagnitude
 
-        spheres.traverseSpheres(&ray, &hit)
+        spheres.traverseSpheres(ray, &hit)
 
         if hit.distance < Float.greatestFiniteMagnitude {
 
@@ -202,7 +202,7 @@ extension SceneModel {
                     var scattered = Ray(p, target - p)
 
                     if depth < MAX_DEPTH {
-                        res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
+                        res = albedo * getColorForRay(scattered, depth + 1, using: &random)
                     } else {
                         res = V3()
                     }
@@ -220,7 +220,7 @@ extension SceneModel {
                     // NOTE: (Kapsy) Direction between normal and reflection should never be more than 90 deg.
                     let result = (dot(scattered.direction, N) > 0.0)
                     if (depth < MAX_DEPTH && result) {
-                        res = albedo * getColorForRay(&scattered, depth + 1, using: &random)
+                        res = albedo * getColorForRay(scattered, depth + 1, using: &random)
                     } else {
                         res = V3()
                     }
@@ -273,7 +273,7 @@ extension SceneModel {
                     }
 
                     if depth < MAX_DEPTH {
-                        res = getColorForRay(&scattered, depth + 1, using: &random)
+                        res = getColorForRay(scattered, depth + 1, using: &random)
                     } else {
                         res = V3()
                     }
@@ -418,8 +418,8 @@ extension ContentView {
                         for _ in 0..<ns {
                             let uVal = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(width)
                             let vVal = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(height)
-                            var r = camera.getRay(uVal, vVal, random: &random)
-                            col += scene.getColorForRay(&r, 0, using: &random)
+                            let r = camera.getRay(uVal, vVal, random: &random)
+                            col += scene.getColorForRay(r, 0, using: &random)
                         }
                         col /= Float(ns)
                         col.r = clamp01(col.r)
