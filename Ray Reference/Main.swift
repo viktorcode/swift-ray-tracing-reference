@@ -111,14 +111,14 @@ extension Ray {
     }
 }
 
-extension Array where Element == Sphere {
+extension Span where Element == Sphere {
     func traverseSpheres(_ ray: Ray, _ hit: inout HitRecord) {
 
         let tnear = Float(0.001)
         var tfar = Float.greatestFiniteMagnitude
 
-        for sphere in self {
-
+        for sphereIndex in self.indices {
+            let sphere = self[sphereIndex]
             let rad = sphere.radius
             let center = sphere.center
             let oc = ray.origin - center
@@ -164,7 +164,7 @@ extension SceneModel {
         var hit = HitRecord()
         hit.distance = Float.greatestFiniteMagnitude
 
-        spheres.traverseSpheres(ray, &hit)
+        spheres.span.traverseSpheres(ray, &hit)
 
         if hit.distance < Float.greatestFiniteMagnitude {
 
@@ -299,7 +299,7 @@ extension SceneModel {
 extension ContentView {
     func setup() -> SceneModel {
         // MARK: Init spheres
-        var spheres: [Sphere] = []
+        var spheres: ContiguousArray<Sphere> = []
 
         var perlinTexture = Texture()
         perlinTexture.albedo = V3(1,1,1)

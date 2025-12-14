@@ -128,7 +128,7 @@ struct Perlin {
 }
 
 struct SceneModel {
-    let spheres: [Sphere]
-    let perlin: [Perlin]
+    let spheres: ContiguousArray<Sphere>
+    let perlin: ContiguousArray<Perlin>
 }
 
