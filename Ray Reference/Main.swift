@@ -199,7 +199,7 @@ extension SceneModel {
                     let rand = randomInUnitSphere(using: &random)
                     let target = p + N + rand
                     let albedo = getAlbedo(0, 0, p, texture: mat.texture)
-                    var scattered = Ray(p, target - p)
+                    let scattered = Ray(p, target - p)
 
                     if depth < MAX_DEPTH {
                         res = albedo * getColorForRay(scattered, depth + 1, using: &random)
@@ -210,10 +210,10 @@ extension SceneModel {
                 case .metal(let fuzz):
 
                     let v = unit(ray.direction)
-                    let reflected = v - 2*dot(v, N)*N
-                    let bias = N*1e-4
+                    let reflected = v - 2 * dot(v, N)*N
+                    let bias = N * 1e-4
 
-                    var scattered = Ray(p + bias, reflected + fuzz * randomInUnitSphere(using: &random))
+                    let scattered = Ray(p + bias, reflected + fuzz * randomInUnitSphere(using: &random))
 
                     let albedo = getAlbedo(0, 0, p, texture: mat.texture)
 
