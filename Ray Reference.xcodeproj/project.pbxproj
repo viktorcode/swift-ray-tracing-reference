@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		202F8EB72F07215500FFFEE9 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		20F7AA102E59B8D9009A16CD /* Ray Reference.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ray Reference.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,6 +33,7 @@
 		20F7AA072E59B8D9009A16CD = {
 			isa = PBXGroup;
 			children = (
+				202F8EB72F07215500FFFEE9 /* README.md */,
 				20F7AA122E59B8D9009A16CD /* Ray Reference */,
 				20F7AA112E59B8D9009A16CD /* Products */,
 			);
