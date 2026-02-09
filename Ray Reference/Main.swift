@@ -5,11 +5,9 @@ import simd
 
 let PERLIN_N: Int = (1 << 8)
 
-func permuteAxis(_ axis: inout [Int], _ i: Int, using generator: inout some RandomNumberGenerator) {
+func permuteAxis(_ axis: inout ContiguousArray<Int>, _ i: Int, using generator: inout some RandomNumberGenerator) {
     let tar = Int(Float.random(in: 0..<1, using: &generator) * Float(i + 1))
-    let tmp = axis[i]
-    axis[i] = axis[tar]
-    axis[tar] = tmp
+    axis.swapAt(i, tar)
 }
 
 extension Perlin {
@@ -91,7 +89,11 @@ extension Camera {
         // NOTE: (Kapsy) Random in unit disk.
         var rand = V3(repeating: 0)
         repeat  {
-            rand = 2.0 * V3(Float.random(in: 0..<1, using: &random), Float.random(in: 0..<1, using: &random), 0) - V3(1,1,0)
+            rand = 2.0 * V3(
+                Float.random(in: 0..<1, using: &random),
+                Float.random(in: 0..<1, using: &random),
+                0
+            ) - V3(1,1,0)
         } while dot(rand, rand) >= 1.0
 
         let rd = lensRad * rand;

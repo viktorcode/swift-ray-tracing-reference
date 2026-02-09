@@ -97,21 +97,17 @@ struct Ray {
 // MARK: Perlin
 // NOTE: (Kapsy) This is an incomplete implementation!
 struct Perlin {
-    var permX: [Int]
-    var permY: [Int]
-    var permZ: [Int]
+    var permX: ContiguousArray<Int> = .init(repeating: 0, count: PERLIN_N)
+    var permY: ContiguousArray<Int> = .init(repeating: 0, count: PERLIN_N)
+    var permZ: ContiguousArray<Int> = .init(repeating: 0, count: PERLIN_N)
 
-    let randFloat: [Float]
+    let randFloat: ContiguousArray<Float>
 
     init() {
         let N = PERLIN_N
         var random = Wyrand()
 
-        self.permX = [Int](repeating: 0, count: PERLIN_N)
-        self.permY = [Int](repeating: 0, count: PERLIN_N)
-        self.permZ = [Int](repeating: 0, count: PERLIN_N)
-
-        self.randFloat = (0..<N).map { _ in Float.random(in: 0..<1, using: &random) }
+        self.randFloat = ContiguousArray((0..<N).map { _ in Float.random(in: 0..<1, using: &random) })
 
         for i in 0..<N {
             self.permX[i] = i
