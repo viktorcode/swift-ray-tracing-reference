@@ -17,13 +17,13 @@ extension Perlin {
 
         let p1 = p0 * 20.0
 
-        let u = Float(p1.x - floor(p1.x))
-        let v = Float(p1.y - floor(p1.y))
-        let w = Float(p1.z - floor(p1.z))
+        let u = Float(p1.x - p1.x.rounded(.down))
+        let v = Float(p1.y - p1.y.rounded(.down))
+        let w = Float(p1.z - p1.z.rounded(.down))
 
-        let i = Int(floor(p1.x))
-        let j = Int(floor(p1.y))
-        let k = Int(floor(p1.z))
+        let i = Int(p1.x.rounded(.down))
+        let j = Int(p1.y.rounded(.down))
+        let k = Int(p1.z.rounded(.down))
 
         var c: InlineArray<8, Float> = .init(repeating: 0)
 
@@ -126,7 +126,7 @@ extension Span where Element == Sphere {
             let discriminant = b * b - a * c;
 
             if discriminant > 0.0 {
-                let discriminantRoot = sqrt(discriminant)
+                let discriminantRoot = discriminant.squareRoot()
                 var t = (-b - discriminantRoot) / a
                 if (tnear < t && t < tfar)
                 {
@@ -256,7 +256,7 @@ extension SceneModel {
 
                     // NOTE: (Kapsy) Approximate reflection/refraction probability.
                     if discriminant > 0.0 {
-                        refracted = niOverNt*(uv - outwardNormal*dt) - outwardNormal * sqrt(discriminant)
+                        refracted = niOverNt*(uv - outwardNormal*dt) - outwardNormal * discriminant.squareRoot()
                         reflectProb = schlick(cos, refIndex)
                     } else {
                         scattered = Ray(p, reflected)
