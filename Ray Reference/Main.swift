@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 // MARK: Perlin Noise
 
@@ -61,10 +62,6 @@ func schlick(_ cos: Float, _ refIndex: Float) -> Float {
     return r0
 }
 
-func reflect(_ v: V3, _ N: V3) -> V3 {
-    v - 2 * dot(v, N) * N
-}
-
 extension SceneModel {
     func getAlbedo(_ u: Float, _ v: Float, _ p: V3, texture: Texture) -> V3 {
         let res: V3
@@ -82,7 +79,7 @@ extension SceneModel {
             res = texture.albedo
 
         case .perlin(let index):
-            res = V3(1.0) * perlin[index].getNoise(p)
+            res = V3(repeating: 1.0) * perlin[index].getNoise(p)
         }
 
         return res
@@ -92,7 +89,7 @@ extension SceneModel {
 extension Camera {
     func getRay(_ s: Float, _ t: Float, random: inout some RandomNumberGenerator) -> Ray {
         // NOTE: (Kapsy) Random in unit disk.
-        var rand = V3(0)
+        var rand = V3(repeating: 0)
         repeat  {
             rand = 2.0 * V3(Float.random(in: 0..<1, using: &random), Float.random(in: 0..<1, using: &random), 0) - V3(1,1,0)
         } while dot(rand, rand) >= 1.0
@@ -168,8 +165,8 @@ extension SceneModel {
 
         if hit.distance < Float.greatestFiniteMagnitude {
 
-            var p = V3(0)
-            var N = V3(0)
+            var p = V3(repeating: 0)
+            var N = V3(repeating: 0)
             var mat: Material? = nil;
 
             switch hit.primType {
@@ -209,7 +206,7 @@ extension SceneModel {
 
                 case .metal(let fuzz):
 
-                    let v = unit(ray.direction)
+                    let v = normalize(ray.direction)
                     let reflected = v - 2 * dot(v, N)*N
                     let bias = N * 1e-4
 
@@ -229,9 +226,9 @@ extension SceneModel {
 
                     var scattered = Ray()
 
-                    var outwardNormal = V3(0)
+                    var outwardNormal = V3(repeating: 0)
                     var niOverNt = Float(0)
-                    let reflected = reflect(ray.direction, N)
+                    let reflected = reflect(ray.direction, n: N)
 
                     var reflectProb = Float(0)
                     var cos = Float(0)
@@ -253,7 +250,7 @@ extension SceneModel {
                     let bias = outwardNormal*1e-2
                     p = p - bias
 
-                    let uv = unit(ray.direction)
+                    let uv = normalize(ray.direction)
                     let dt = dot(uv, outwardNormal)
                     let discriminant = 1.0 - niOverNt*niOverNt*(1.0 - dt*dt)
 
@@ -285,8 +282,8 @@ extension SceneModel {
             // NOTE: (Kapsy) Draw our psuedo sky background.
             let rdir = ray.direction
 
-            let t = (unit(rdir).y + 1.0)*0.5
-            let cola = V3(1.0)
+            let t = (normalize(rdir).y + 1.0)*0.5
+            let cola = V3(repeating: 1.0)
             let colb = (1.0/255.0) * V3(255.0, 128.0, 0.0)
 
             res = (1.0 - t)*cola + t*colb
@@ -309,7 +306,7 @@ extension ContentView {
         spheres.append(sphere0)
 
         var glassTexture = Texture()
-        glassTexture.albedo = V3(1)
+        glassTexture.albedo = V3(repeating: 1)
         let sphere1Mat = Material(type: .dielectric(refIndex: 1.1), texture: glassTexture)
         let sphere1 = Sphere(center: V3(0.53, 0.3, -0.33), radius: -0.23, material: sphere1Mat)
         spheres.append(sphere1)
@@ -390,8 +387,8 @@ extension ContentView {
         let halfHeight = tan(theta/2)
         let halfWidth = Float(aspect*halfHeight)
 
-        let w = unit(lookFromRes - lookAt)
-        let u = unit(cross(vup, w))
+        let w = normalize(lookFromRes - lookAt)
+        let u = normalize(cross(vup, w))
         let v = cross(w, u)
 
         let camera = Camera(origin: lookFromRes,
@@ -414,7 +411,7 @@ extension ContentView {
                     row.reserveCapacity(width)
                     var random = Wyrand()
                     for i in 0..<width {
-                        var col = V3(0)
+                        var col = V3(repeating: 0)
                         for _ in 0..<ns {
                             let uVal = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(width)
                             let vVal = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(height)

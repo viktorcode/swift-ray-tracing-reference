@@ -17,7 +17,7 @@ enum TextureType {
 
 struct Texture {
     var type: TextureType = .plain
-    var albedo = V3(0)
+    var albedo = V3(repeating: 0)
 }
 
 // MARK: Material
@@ -89,8 +89,8 @@ struct Ray {
     }
 
     init() {
-        self.A = V3(0)
-        self.B = V3(0)
+        self.A = V3(repeating: 0)
+        self.B = V3(repeating: 0)
     }
 }
 

@@ -20,116 +20,27 @@ func clamp01(_ a: Float) -> Float {
 }
 
 // MARK: V3
+import simd
 
-struct V3 {
-    var x: Float = 0
-    var y: Float = 0
-    var z: Float = 0
+typealias V3 = SIMD3<Float>
 
-    // NOTE: (Kapsy) For C union like behavior.
-    var r: Float { get { return x } set(a) { self.x = a } }
-    var g: Float { get { return y } set(a) { self.y = a } }
-    var b: Float { get { return z } set(a) { self.z = a } }
-
-
-    init() {}
-
-    init(_ val: Float) {
-        self.x = val
-        self.y = val
-        self.z = val
-    }
-
-    init(_ x: Float, _ y: Float, _ z: Float) {
-        self.x = x
-        self.y = y
-        self.z = z
-    }
-}
-
-func +(a: V3, b: V3) -> V3 {
-    let res = V3(a.x + b.x, a.y + b.y, a.z + b.z)
-    return res
-}
-
-func +=(a: inout V3, b: V3) {
-    a = a + b
-}
-
-func -(a: V3, b: V3) -> V3 {
-    let res = V3(a.x - b.x, a.y - b.y, a.z - b.z)
-    return res
-}
-
-func -=(a: inout V3, b: V3) {
-    a = a - b
-}
-
-func *(a: V3, b: V3) -> V3 {
-    let res = V3(a.x*b.x, a.y*b.y, a.z*b.z)
-    return res
-}
-
-func *=(a: inout V3, b: V3) {
-    a = a * b
-}
-
-func /(a: V3, b: Float) -> V3 {
-    let res = V3(a.x/b, a.y/b, a.z/b)
-    return res
-}
-
-func /=(a: inout V3, b: Float) {
-    a = a/b
-}
-
-func *(a: Float, b: V3) -> V3 {
-    let res = V3(a * b.x, a * b.y, a * b.z)
-    return res
-}
-
-func *(a: V3, b: Float) -> V3 {
-    let res = b*a
-    return res
-}
-
-prefix func -(a: V3) -> V3 {
-    let res = V3(-a.x, -a.y, -a.z)
-    return res
-}
-
-func dot(_ a: V3, _ b: V3) -> Float {
-    let res = a.x * b.x + a.y * b.y + a.z * b.z
-    return res
-}
-
-func cross(_ a: V3, _ b: V3) -> V3 {
-    let res = V3(a.y*b.z - a.z*b.y,
-                 a.z*b.x - a.x*b.z,
-                 a.x*b.y - a.y*b.x);
-    return res
-}
-
-func length(_ a: V3) -> Float {
-    let res = sqrt(dot(a, a))
-    return res
-}
-
-func unit(_ a: V3) -> V3 {
-    let res = a/length(a)
-    return res
-}
-
-func squaredLen(_ v: V3) -> Float {
-    return dot(v, v)
+extension V3 {
+    var r: Float { get { x } set { x = newValue } }
+    var g: Float { get { y } set { y = newValue } }
+    var b: Float { get { z } set { z = newValue } }
 }
 
 func randomInUnitSphere(using generator: inout some RandomNumberGenerator) -> V3 {
-    var v = V3(0)
+    var v = V3(repeating: 0)
 
     repeat {
-        v = 2.0*V3(Float.random(in: 0..<1, using: &generator), Float.random(in: 0..<1, using: &generator), Float.random(in: 0..<1, using: &generator)) - V3(1)
-    } while squaredLen(v) >= 1.0
+        v = 2.0 * V3(
+            Float.random( in: 0..<1,using: &generator),
+            Float.random(in: 0..<1, using: &generator),
+            Float.random(in: 0..<1, using: &generator)
+        ) - V3(repeating: 1.0)
+    } while length_squared(v) >= 1.0
 
     return (v);
 }
+
