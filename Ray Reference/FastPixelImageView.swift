@@ -10,7 +10,7 @@ struct FastPixelImageView: View {
         let startTime = CFAbsoluteTimeGetCurrent()
         self.cgImage = FastPixelImageView.makeCGImage(bitmap: bitmap, width: width, height: height)
         let renderingTime = CFAbsoluteTimeGetCurrent() - startTime
-        print("Time spent rendering: \(renderingTime)s")
+        print("Time spent rendering: \(String(format: "%.3f", renderingTime * 1000)) ms")
     }
 
     var body: some View {

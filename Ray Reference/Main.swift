@@ -443,7 +443,7 @@ extension ContentView {
             data[rowIndex] = row
         }
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
-        print("Time spent raytracing: \(raytracingTime)s")
+        print("Time spent raytracing: \(String(format: "%.3f", raytracingTime * 1000)) ms")
 
         // NOTE: (Kapsy) Rodrigues Rotation formula
         var vector = lookFrom
