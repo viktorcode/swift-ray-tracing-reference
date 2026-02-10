@@ -379,7 +379,6 @@ extension ContentView {
         var lookFromRes = lookFrom
         lookFromRes = lookFromRes*((-cos(ellipsePhase) + 1.0) * 0.07 + 1.3);
 
-        let vup = V3(0.18, 1, 0)
         let vfov = Float(60)
         let aspect = Float(nx)/Float(ny)
         let aperture = Float(0.09)
@@ -390,7 +389,7 @@ extension ContentView {
         let halfWidth = Float(aspect*halfHeight)
 
         let w = normalize(lookFromRes - lookAt)
-        let u = normalize(cross(vup, w))
+        let u = normalize(cross(vUp, w))
         let v = cross(w, u)
 
         let camera = Camera(origin: lookFromRes,
@@ -443,12 +442,5 @@ extension ContentView {
         }
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
         print("Time spent raytracing: \(String(format: "%.3f", raytracingTime * 1000)) ms")
-
-        // NOTE: (Kapsy) Rodrigues Rotation formula
-        var vector = lookFrom
-        vector = vector * cos(omega) + cross(k, vector) * sin(omega) + k * dot(k, v) * (1.0 - cos(omega))
-        lookFrom = vector
-
-        ellipsePhase += omega
     }
 }
