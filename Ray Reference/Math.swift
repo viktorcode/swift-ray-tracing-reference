@@ -10,15 +10,6 @@ func filterNaN(_ value: Float) -> Float {
     return value.isNaN ? 0.0 : value
 }
 
-func clamp01(_ a: Float) -> Float {
-    if a > 1.0 {
-        return 1.0
-    } else if a < 0.0 {
-        return 0.0
-    }
-    return a
-}
-
 // MARK: V3
 import simd
 
@@ -31,7 +22,7 @@ extension V3 {
 }
 
 func randomInUnitSphere(using generator: inout some RandomNumberGenerator) -> V3 {
-    var v = V3(repeating: 0)
+    var v = V3()
 
     repeat {
         v = 2.0 * V3(

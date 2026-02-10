@@ -87,7 +87,7 @@ extension SceneModel {
 extension Camera {
     func getRay(_ s: Float, _ t: Float, random: inout some RandomNumberGenerator) -> Ray {
         // NOTE: (Kapsy) Random in unit disk.
-        var rand = V3(repeating: 0)
+        var rand = V3()
         repeat  {
             rand = 2.0 * V3(
                 Float.random(in: 0..<1, using: &random),
@@ -106,7 +106,7 @@ extension Camera {
 
 extension Ray {
     func pointAt(_ t: Float) -> V3 {
-        A + t * B
+        origin + t * direction
     }
 }
 
@@ -118,13 +118,13 @@ extension Span where Element == Sphere {
 
         for sphereIndex in self.indices {
             let sphere = self[sphereIndex]
-            let rad = sphere.radius
+            let radius = sphere.radius
             let center = sphere.center
             let oc = ray.origin - center
 
-            let a = dot(ray.direction, ray.direction)
+            let a = length_squared(ray.direction)
             let b = dot(oc, ray.direction)
-            let c = dot(oc, oc) - rad * rad
+            let c = length_squared(oc) - radius * radius
             let discriminant = b * b - a * c;
 
             if discriminant > 0.0 {
@@ -167,8 +167,8 @@ extension SceneModel {
 
         if hit.distance < Float.greatestFiniteMagnitude {
 
-            var p = V3(repeating: 0)
-            var N = V3(repeating: 0)
+            var p = V3()
+            var N = V3()
             var mat: Material? = nil;
 
             switch hit.primType {
@@ -228,7 +228,7 @@ extension SceneModel {
 
                     var scattered = Ray()
 
-                    var outwardNormal = V3(repeating: 0)
+                    var outwardNormal = V3()
                     var niOverNt = Float(0)
                     let reflected = reflect(ray.direction, n: N)
 
@@ -371,7 +371,7 @@ extension ContentView {
 
     func raytraceFrame(in scene: SceneModel) async {
         // NOTE: (Kapsy) Primary rays per pixel
-        let ns = Int(30)
+        let raysPerPixel = 30
 
         let startTime = CFAbsoluteTimeGetCurrent()
 
@@ -412,18 +412,16 @@ extension ContentView {
                     row.reserveCapacity(width)
                     var random = Wyrand()
                     for i in 0..<width {
-                        var col = V3(repeating: 0)
-                        for _ in 0..<ns {
+                        var color = V3()
+                        for _ in 0..<raysPerPixel {
                             let uVal = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(width)
                             let vVal = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(height)
                             let r = camera.getRay(uVal, vVal, random: &random)
-                            col += scene.getColorForRay(r, 0, using: &random)
+                            color += scene.getColorForRay(r, 0, using: &random)
                         }
-                        col /= Float(ns)
-                        col.r = clamp01(col.r)
-                        col.g = clamp01(col.g)
-                        col.b = clamp01(col.b)
-                        row.append(col)
+                        color /= Float(raysPerPixel)
+                        color.clamp(lowerBound: .zero, upperBound: .one)
+                        row.append(color)
                     }
                     // Original code wrote rows in reversed order
                     let rowIndex = height - j - 1

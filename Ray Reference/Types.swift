@@ -17,7 +17,7 @@ enum TextureType {
 
 struct Texture {
     var type: TextureType = .plain
-    var albedo = V3(repeating: 0)
+    var albedo = V3()
 }
 
 // MARK: Material
@@ -75,22 +75,17 @@ struct HitRecord {
 }
 
 struct Ray {
-
-    var A: V3
-    var B: V3
-
-    // NOTE: (Kapsy) For C union like behavior.
-    var origin: V3 { get { return A } }
-    var direction: V3 { get { return B } }
+    var origin: V3
+    var direction: V3
 
     init(_ A: V3, _ B: V3) {
-        self.A = A
-        self.B = B
+        self.origin = A
+        self.direction = B
     }
 
     init() {
-        self.A = V3(repeating: 0)
-        self.B = V3(repeating: 0)
+        self.origin = V3()
+        self.direction = V3()
     }
 }
 
