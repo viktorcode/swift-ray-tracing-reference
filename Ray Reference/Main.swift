@@ -362,9 +362,6 @@ extension ContentView {
         let sphere9 = Sphere(center: V3(0.5, 0.3, -0.9), radius: 0.10, material: sphere9Mat)
         spheres.append(sphere9)
         data.reserveCapacity(nx * ny)
-        (0..<ny).forEach { _ in
-            data.append([])
-        }
 
         return SceneModel(spheres: spheres, perlin: [Perlin()])
     }
@@ -399,45 +396,46 @@ extension ContentView {
                             w: w, u: u, v: v,
                             lensRad: aperture/2.0)
 
-        // Compute rows in parallel using a task group.
+        // Compute pixel chunks in parallel using a task group.
         let width = nx
         let height = ny
-        var results: [(Int, [V3])] = []
-        results.reserveCapacity(height)
+        let pixelCount = width * height
+        let chunkSize = width
+        var results = [V3](repeating: .zero, count: pixelCount)
 
-        await withTaskGroup(of: (Int, [V3]).self) { group in
-            for j in 0..<height {
+        await withTaskGroup(of: (Range<Int>, [V3]).self) { group in
+            for chunkStart in stride(from: 0, to: pixelCount, by: chunkSize) {
+                let chunkEnd = min(chunkStart + chunkSize, pixelCount)
                 group.addTask {
-                    var row: [V3] = []
-                    row.reserveCapacity(width)
+                    var chunk: [V3] = []
+                    chunk.reserveCapacity(chunkEnd - chunkStart)
                     var random = Wyrand()
-                    for i in 0..<width {
+                    for pixelIndex in chunkStart..<chunkEnd {
+                        let x = pixelIndex % width
+                        // Performing vertical flip
+                        let y = height - pixelIndex / width - 1
+
                         var color = V3()
                         for _ in 0..<raysPerPixel {
-                            let uVal = (Float(i) + Float.random(in: 0..<1, using: &random))/Float(width)
-                            let vVal = (Float(j) + Float.random(in: 0..<1, using: &random))/Float(height)
+                            let uVal = (Float(x) + Float.random(in: 0..<1, using: &random))/Float(width)
+                            let vVal = (Float(y) + Float.random(in: 0..<1, using: &random))/Float(height)
                             let r = camera.getRay(uVal, vVal, random: &random)
                             color += scene.getColorForRay(r, 0, using: &random)
                         }
                         color /= Float(raysPerPixel)
                         color.clamp(lowerBound: .zero, upperBound: .one)
-                        row.append(color)
+                        chunk.append(color)
                     }
-                    // Original code wrote rows in reversed order
-                    let rowIndex = height - j - 1
-                    return (rowIndex, row)
+                    return (chunkStart..<chunkEnd, chunk)
                 }
             }
 
-            for await result in group {
-                results.append(result)
+            for await (range, chunk) in group {
+                results.replaceSubrange(range, with: chunk)
             }
         }
 
-        // Apply results and update state on the main actor
-        for (rowIndex, row) in results {
-            data[rowIndex] = row
-        }
+        data = results
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
         print("Time spent raytracing: \((raytracingTime * 1000).formatted(.number.precision(.fractionLength(3)))) ms")
     }

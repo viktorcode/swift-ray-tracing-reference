@@ -16,8 +16,8 @@ struct ContentView: View {
     let vUp = V3(0.18, 1, 0)
     let omega: Float = (2 * Float.pi) / 300
 
-    @State var data: [[V3]] = []
-    @State var pixels: [[V3]] = []
+    @State var data: [V3] = []
+    @State var pixels: [V3] = []
 
     @State var lookFrom: V3 = .init(0.001, 0.39, -1.0)
     @State var ellipsePhase: Float = 0
@@ -25,7 +25,7 @@ struct ContentView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        FastPixelImageView(bitmap: pixels)
+        FastPixelImageView(bitmap: pixels, width: nx, height: ny)
             .focusable()
             .focused($focused)
             .onKeyPress { press in
