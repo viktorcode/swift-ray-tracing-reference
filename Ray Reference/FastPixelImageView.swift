@@ -10,7 +10,7 @@ struct FastPixelImageView: View {
         let startTime = CFAbsoluteTimeGetCurrent()
         self.cgImage = FastPixelImageView.makeCGImage(bitmap: bitmap, width: width, height: height)
         let renderingTime = CFAbsoluteTimeGetCurrent() - startTime
-        print("Time spent rendering: \(String(format: "%.3f", renderingTime * 1000)) ms")
+        print("Time spent rendering: \((renderingTime * 1000).formatted(.number.precision(.fractionLength(3))))) ms")
     }
 
     var body: some View {
@@ -38,7 +38,7 @@ struct FastPixelImageView: View {
             }
         }
         let provider = CGDataProvider(data: Data(data) as CFData)
-        return CGImage(
+        return unsafe CGImage(
             width: width,
             height: height,
             bitsPerComponent: 8,

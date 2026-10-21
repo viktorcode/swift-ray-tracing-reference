@@ -439,6 +439,6 @@ extension ContentView {
             data[rowIndex] = row
         }
         let raytracingTime = CFAbsoluteTimeGetCurrent() - startTime
-        print("Time spent raytracing: \(String(format: "%.3f", raytracingTime * 1000)) ms")
+        print("Time spent raytracing: \((raytracingTime * 1000).formatted(.number.precision(.fractionLength(3)))) ms")
     }
 }
