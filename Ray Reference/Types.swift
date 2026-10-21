@@ -70,8 +70,8 @@ struct Camera {
 
 struct HitRecord {
     var distance = Float(0)
-    var primRef: Sphere? = nil
     var primType: PrimativeType = .sphere
+    var primRef: Sphere? = nil
 }
 
 struct Ray {
